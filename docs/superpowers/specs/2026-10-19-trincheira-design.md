@@ -65,7 +65,7 @@ Cada mapa tem paleta de cores própria (céu, chão, trincheira).
 | Veterano | 150% | 2 s | compra para combater o que você tem; segura a trincheira até ter muita vantagem |
 | General | 220% | 1,2 s | igual Veterano, compra 2 por vez e só ataca com exército grande |
 
-Ajustado com partidas simuladas contra um jogador simples (junta 6 soldados e avança): o jogador vence ~100% no Recruta, ~47% no Soldado, ~25% no Veterano e ~19% no General. O computador leva em conta a cobertura de quem está entrincheirado antes de atacar.
+Ajustado com partidas simuladas contra um jogador simples (junta 6 soldados e avança): o jogador vence ~100% no Recruta, ~28% no Soldado, ~16% no Veterano e ~3% no General (64 partidas por nível). O computador leva em conta a cobertura de quem está entrincheirado antes de atacar.
 
 ### Telas **[Claude]**
 

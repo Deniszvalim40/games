@@ -85,7 +85,7 @@ function order(s, side, dir) {
       if (Math.sign(u.target - u.at) === dir * sg) continue; // já indo nessa direção
       t = u.at;                                               // volta para onde estava
     } else {
-      if (dir === 1 && contested(s, u.at)) continue;
+      if (dir === 1 && (contested(s, u.at) || u.at === (sg === 1 ? n : -1))) continue; // já atacando a base
       t = u.at + dir * sg;
     }
     u.target = Math.max(lo, Math.min(hi, t));

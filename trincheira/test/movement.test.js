@@ -78,3 +78,15 @@ test('order ignored after game over', () => {
   T.order(s, 'p', 1);
   assert.equal(u.target, 0);
 });
+
+test('advance keeps base attackers on the base after a trench is lost', () => {
+  const s = game();
+  const p = place(s, 'p', 'fuzileiro', 3, { hp: 1e9 });
+  s.trenches[1].owner = 'e';
+  T.order(s, 'p', 1);
+  assert.equal(p.target, 3);
+  const e = place(s, 'e', 'fuzileiro', -1, { hp: 1e9 });
+  s.trenches[0].owner = 'p';
+  T.order(s, 'e', 1);
+  assert.equal(e.target, -1);
+});
