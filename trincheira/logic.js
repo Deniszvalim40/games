@@ -105,6 +105,77 @@ function move(s, dt) {
   });
 }
 
+const BASE_GUN = { dano: 8, alcance: 120, cadencia: 0.5 };
+const opp = side => side === 'p' ? 'e' : 'p';
+const MAX_EVENTS = 200;
+function emit(s, ev) { s.events.push(ev); if (s.events.length > MAX_EVENTS) s.events.splice(0, s.events.length - MAX_EVENTS); }
+
+// Alvo assentado numa trincheira tem cobertura, menos contra quem está na mesma trincheira.
+function coverMul(s, target, attacker) {
+  if (!inTrench(s, target.at) || !isSettled(s, target)) return 1;
+  if (attacker && attacker.at === target.at && isSettled(s, attacker)) return 1;
+  return s.map.cobertura;
+}
+
+function nearestEnemy(s, side, x, range) {
+  let best = null, bd = Infinity;
+  for (const u of s.units) {
+    if (u.side === side || u.hp <= 0) continue;
+    const d = Math.abs(u.x - x);
+    if (d <= range && d < bd) { bd = d; best = u; }
+  }
+  return best;
+}
+
+function combat(s, dt) {
+  for (const u of s.units) {
+    if (u.hp <= 0) continue;
+    u.cd -= dt;
+    if (u.cd > 0) continue;
+    const def = UNITS[u.type], foe = opp(u.side), base = s.bases[foe];
+    const tgt = nearestEnemy(s, u.side, u.x, def.alcance);
+    const assaulting = u.target === (u.side === 'p' ? N(s) : -1);
+    let alvoX;
+    if (tgt) alvoX = tgt.x;
+    else if (assaulting && Math.abs(base.x - u.x) <= def.alcance) alvoX = base.x;
+    else continue;
+    u.cd = def.cadencia;
+    if (def.area > 0) {
+      for (const v of s.units) if (v.side === foe && Math.abs(v.x - alvoX) <= def.area) v.hp -= def.dano;
+      if (Math.abs(base.x - alvoX) <= def.area) base.hp -= def.dano;
+      emit(s, { tipo: 'explosao', side: u.side, x: u.x, alvoX });
+    } else {
+      if (tgt) tgt.hp -= def.dano * coverMul(s, tgt, u); else base.hp -= def.dano;
+      emit(s, { tipo: 'tiro', side: u.side, x: u.x, alvoX, type: u.type });
+    }
+  }
+  for (const side of ['p', 'e']) {
+    const b = s.bases[side];
+    b.cd -= dt;
+    if (b.cd > 0) continue;
+    const tgt = nearestEnemy(s, side, b.x, BASE_GUN.alcance);
+    if (!tgt) continue;
+    b.cd = BASE_GUN.cadencia;
+    tgt.hp -= BASE_GUN.dano;
+    emit(s, { tipo: 'tiro', side, x: b.x, alvoX: tgt.x, type: 'base' });
+  }
+  s.units = s.units.filter(u => {
+    if (u.hp > 0) return true;
+    const k = opp(u.side);
+    s.kills[k]++;
+    s.money[k] += Math.floor(UNITS[u.type].custo / 2);
+    emit(s, { tipo: 'morte', side: u.side, x: u.x });
+    return false;
+  });
+  for (const side of ['p', 'e']) {
+    if (s.bases[side].hp <= 0 && !s.over) {
+      s.bases[side].hp = 0;
+      s.over = opp(side);
+      emit(s, { tipo: 'base', side, x: s.bases[side].x });
+    }
+  }
+}
+
 function step(s, dt) {
   if (s.over) return;
   s.t += dt;
@@ -113,10 +184,11 @@ function step(s, dt) {
   s.ai.cd -= dt;
   if (s.ai.cd <= 0) { s.ai.cd = s.diff.intervalo; aiThink(s); }
   move(s, dt);
+  combat(s, dt);
 }
 
 function aiThink(s) {}
 
 return { MAX_UNITS, INCOME, START_MONEY, BASE_HP, UNITS, UNIT_ORDER, MAPS, DIFFS, rng, createGame,
-  firstTrench, alive, buy, step, aiThink, destX, isSettled, contested, ownsAll, order };
+  firstTrench, alive, buy, step, aiThink, destX, isSettled, contested, ownsAll, order, coverMul, BASE_GUN };
 });
