@@ -60,10 +60,12 @@ Cada mapa tem paleta de cores própria (céu, chão, trincheira).
 
 | Nível | Renda do computador | Pensa a cada | Comportamento |
 |---|---|---|---|
-| Recruta | 70% | 4 s | compra aleatório, avança tarde |
-| Soldado | 100% | 3 s | equilibrado |
-| Veterano | 125% | 2 s | compra para combater o que você tem |
-| General | 160% | 1,2 s | igual Veterano, mais agressivo |
+| Recruta | 50% | 4 s | compra aleatório, ataca cedo e mal (avança com 4 soldados e vantagem pequena) |
+| Soldado | 110% | 3 s | equilibrado (avança com 6 soldados e o dobro e meio da sua força) |
+| Veterano | 150% | 2 s | compra para combater o que você tem; segura a trincheira até ter muita vantagem |
+| General | 220% | 1,2 s | igual Veterano, compra 2 por vez e só ataca com exército grande |
+
+Ajustado com partidas simuladas contra um jogador simples (junta 6 soldados e avança): o jogador vence ~100% no Recruta, ~47% no Soldado, ~25% no Veterano e ~19% no General. O computador leva em conta a cobertura de quem está entrincheirado antes de atacar.
 
 ### Telas **[Claude]**
 

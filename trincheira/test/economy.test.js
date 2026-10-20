@@ -40,5 +40,5 @@ test('income per second with difficulty multiplier', () => {
   s.ai.cd = Infinity;
   for (let i = 0; i < 600; i++) T.step(s, 1 / 60);
   assert.ok(Math.abs(s.money.p - 250) < 1e-6, s.money.p);
-  assert.ok(Math.abs(s.money.e - 310) < 1e-6, s.money.e);
+  assert.ok(Math.abs(s.money.e - 370) < 1e-6, s.money.e);
 });

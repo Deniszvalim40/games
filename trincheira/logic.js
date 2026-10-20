@@ -19,10 +19,10 @@ const MAPS = [
 ];
 
 const DIFFS = [
-  { id: 'recruta',  nome: 'Recruta',  renda: 0.7,  intervalo: 4,   avancar: 2.0, minTropa: 6, compra: 'aleatoria', comprasPorVez: 1 },
-  { id: 'soldado',  nome: 'Soldado',  renda: 1.0,  intervalo: 3,   avancar: 1.5, minTropa: 4, compra: 'pesos',     comprasPorVez: 1 },
-  { id: 'veterano', nome: 'Veterano', renda: 1.25, intervalo: 2,   avancar: 1.3, minTropa: 4, compra: 'contra',    comprasPorVez: 1 },
-  { id: 'general',  nome: 'General',  renda: 1.6,  intervalo: 1.2, avancar: 1.1, minTropa: 3, compra: 'contra',    comprasPorVez: 2 },
+  { id: 'recruta',  nome: 'Recruta',  renda: 0.5,  intervalo: 4,   avancar: 1.2, minTropa: 4,  compra: 'aleatoria', comprasPorVez: 1 },
+  { id: 'soldado',  nome: 'Soldado',  renda: 1.1,  intervalo: 3,   avancar: 2.5, minTropa: 6,  compra: 'pesos',     comprasPorVez: 1 },
+  { id: 'veterano', nome: 'Veterano', renda: 1.5,  intervalo: 2,   avancar: 4.0, minTropa: 8,  compra: 'contra',    comprasPorVez: 1 },
+  { id: 'general',  nome: 'General',  renda: 2.2,  intervalo: 1.2, avancar: 6.0, minTropa: 10, compra: 'contra',    comprasPorVez: 2 },
 ];
 
 function rng(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
@@ -187,8 +187,48 @@ function step(s, dt) {
   combat(s, dt);
 }
 
-function aiThink(s) {}
+// Poder de fogo de um lado num índice de posição (unidades indo para lá ou já lá).
+function strength(s, side, idx) {
+  let t = 0;
+  for (const u of s.units) if (u.side === side && u.target === idx) { const d = UNITS[u.type]; t += u.hp * d.dano / d.cadencia; }
+  return t;
+}
+
+function chooseType(s) {
+  const r = s.rand();
+  if (s.diff.compra === 'aleatoria') return UNIT_ORDER[Math.floor(r * 3)];
+  if (s.diff.compra === 'pesos') return r < 0.5 ? 'fuzileiro' : r < 0.8 ? 'metralhador' : 'granadeiro';
+  const p = s.units.filter(u => u.side === 'p');
+  const packed = s.trenches.some((_, i) => p.filter(u => u.at === i && isSettled(s, u)).length >= 3);
+  const mg = p.filter(u => u.type === 'metralhador').length, rifles = p.filter(u => u.type === 'fuzileiro').length;
+  if ((packed && r < 0.5) || mg > rifles) return 'granadeiro';
+  if (p.length > alive(s, 'e') || r > 0.6) return 'metralhador';
+  return 'fuzileiro';
+}
+
+// Força do jogador numa trincheira, contando a cobertura de quem já está entrincheirado.
+function defended(s, side, idx) {
+  let t = 0;
+  for (const u of s.units) if (u.side === side && u.target === idx) {
+    const d = UNITS[u.type];
+    t += u.hp * d.dano / d.cadencia / (isSettled(s, u) && inTrench(s, idx) ? s.map.cobertura : 1);
+  }
+  return t;
+}
+
+function aiThink(s) {
+  for (let i = 0; i < s.diff.comprasPorVez; i++) if (!buy(s, 'e', chooseType(s))) break;
+  let front = Infinity;
+  for (const u of s.units) if (u.side === 'e' && inTrench(s, u.at) && isSettled(s, u)) front = Math.min(front, u.at);
+  if (front === Infinity) return;
+  const mine = strength(s, 'e', front);
+  if (contested(s, front)) {
+    if (mine / Math.max(1, strength(s, 'p', front)) < 0.5) order(s, 'e', -1);
+    return;
+  }
+  if (mine / Math.max(1, defended(s, 'p', front - 1)) > s.diff.avancar && alive(s, 'e') >= s.diff.minTropa) order(s, 'e', 1);
+}
 
 return { MAX_UNITS, INCOME, START_MONEY, BASE_HP, UNITS, UNIT_ORDER, MAPS, DIFFS, rng, createGame,
-  firstTrench, alive, buy, step, aiThink, destX, isSettled, contested, ownsAll, order, coverMul, BASE_GUN };
+  firstTrench, alive, buy, step, aiThink, destX, isSettled, contested, ownsAll, order, coverMul, BASE_GUN, strength, chooseType };
 });
