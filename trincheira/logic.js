@@ -44,5 +44,30 @@ function createGame(mapId, diffId, seed) {
   };
 }
 
-return { MAX_UNITS, INCOME, START_MONEY, BASE_HP, UNITS, UNIT_ORDER, MAPS, DIFFS, rng, createGame };
+const N = s => s.trenches.length;
+const firstTrench = (s, side) => side === 'p' ? 0 : N(s) - 1;
+const alive = (s, side) => s.units.reduce((c, u) => c + (u.side === side ? 1 : 0), 0);
+
+function buy(s, side, typeId) {
+  const def = UNITS[typeId];
+  if (s.over || !def || s.money[side] < def.custo || alive(s, side) >= MAX_UNITS) return false;
+  s.money[side] -= def.custo;
+  s.units.push({ id: s.nextId++, side, type: typeId, hp: def.vida,
+    x: s.bases[side].x, at: side === 'p' ? -1 : N(s), target: firstTrench(s, side), cd: 0 });
+  return true;
+}
+
+function step(s, dt) {
+  if (s.over) return;
+  s.t += dt;
+  s.money.p += INCOME * dt;
+  s.money.e += INCOME * dt * s.diff.renda;
+  s.ai.cd -= dt;
+  if (s.ai.cd <= 0) { s.ai.cd = s.diff.intervalo; aiThink(s); }
+}
+
+function aiThink(s) {}
+
+return { MAX_UNITS, INCOME, START_MONEY, BASE_HP, UNITS, UNIT_ORDER, MAPS, DIFFS, rng, createGame,
+  firstTrench, alive, buy, step, aiThink };
 });
