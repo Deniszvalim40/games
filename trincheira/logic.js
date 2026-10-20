@@ -57,6 +57,54 @@ function buy(s, side, typeId) {
   return true;
 }
 
+// Posição x de destino do índice idx: trincheira, ou frente da base inimiga (30 antes dela).
+function destX(s, side, idx) {
+  if (idx >= 0 && idx < N(s)) return s.trenches[idx].x;
+  if (idx >= N(s)) return s.bases.e.x - 30;
+  return s.bases.p.x + 30;
+}
+const inTrench = (s, i) => i >= 0 && i < N(s);
+const isSettled = (s, u) => u.at === u.target && u.x === destX(s, u.side, u.at);
+function contested(s, idx) {
+  let p = false, e = false;
+  for (const u of s.units) if (u.at === idx && isSettled(s, u)) { if (u.side === 'p') p = true; else e = true; }
+  return p && e;
+}
+const ownsAll = (s, side) => s.trenches.every(t => t.owner === side);
+
+// dir: 1 = avançar, -1 = recuar (relativo ao lado).
+function order(s, side, dir) {
+  if (s.over) return;
+  const sg = side === 'p' ? 1 : -1, n = N(s);
+  const lo = side === 'p' ? 0 : (ownsAll(s, 'e') ? -1 : 0);
+  const hi = side === 'p' ? (ownsAll(s, 'p') ? n : n - 1) : n - 1;
+  for (const u of s.units) {
+    if (u.side !== side) continue;
+    let t;
+    if (u.target !== u.at) {
+      if (Math.sign(u.target - u.at) === dir * sg) continue; // já indo nessa direção
+      t = u.at;                                               // volta para onde estava
+    } else {
+      if (dir === 1 && contested(s, u.at)) continue;
+      t = u.at + dir * sg;
+    }
+    u.target = Math.max(lo, Math.min(hi, t));
+  }
+}
+
+function move(s, dt) {
+  for (const u of s.units) {
+    const dx = destX(s, u.side, u.target), v = UNITS[u.type].velocidade * s.map.lama * dt;
+    if (Math.abs(dx - u.x) <= v) { u.x = dx; u.at = u.target; }
+    else u.x += Math.sign(dx - u.x) * v;
+  }
+  s.trenches.forEach((tr, i) => {
+    let p = false, e = false;
+    for (const u of s.units) if (u.at === i && isSettled(s, u)) { if (u.side === 'p') p = true; else e = true; }
+    if (p !== e) tr.owner = p ? 'p' : 'e';
+  });
+}
+
 function step(s, dt) {
   if (s.over) return;
   s.t += dt;
@@ -64,10 +112,11 @@ function step(s, dt) {
   s.money.e += INCOME * dt * s.diff.renda;
   s.ai.cd -= dt;
   if (s.ai.cd <= 0) { s.ai.cd = s.diff.intervalo; aiThink(s); }
+  move(s, dt);
 }
 
 function aiThink(s) {}
 
 return { MAX_UNITS, INCOME, START_MONEY, BASE_HP, UNITS, UNIT_ORDER, MAPS, DIFFS, rng, createGame,
-  firstTrench, alive, buy, step, aiThink };
+  firstTrench, alive, buy, step, aiThink, destX, isSettled, contested, ownsAll, order };
 });
