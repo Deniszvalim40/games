@@ -25,16 +25,33 @@ const DIFFS = [
   { id: 'general',  nome: 'General',  renda: 2.2,  intervalo: 1.2, avancar: 6.0, minTropa: 10, compra: 'contra',    comprasPorVez: 2 },
 ];
 
+// Pontos ganhos por vitória e árvore de melhorias (só para o jogador): +5% por nível.
+const POINTS = { recruta: 1, soldado: 2, veterano: 4, general: 7 };
+const UPGRADES = [
+  { id: 'vida',     nome: 'Vida dos soldados' },
+  { id: 'base',     nome: 'Vida da base' },
+  { id: 'dano',     nome: 'Dano dos soldados' },
+  { id: 'cadencia', nome: 'Velocidade de tiro' },
+];
+const UPGRADE_MAX = 10, UPGRADE_STEP = 0.05;
+const upgradeCost = lvl => lvl >= UPGRADE_MAX ? Infinity : lvl < 5 ? 1 : 2;
+function bonus(up) {
+  const m = id => 1 + UPGRADE_STEP * Math.max(0, Math.min(UPGRADE_MAX, (up && up[id]) | 0));
+  return { vida: m('vida'), base: m('base'), dano: m('dano'), cadencia: m('cadencia') };
+}
+const NO_BONUS = bonus(null);
+
 function rng(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 
-function createGame(mapId, diffId, seed) {
+function createGame(mapId, diffId, seed, up) {
   const map = MAPS.find(m => m.id === mapId) || MAPS[0];
   const diff = DIFFS.find(d => d.id === diffId) || DIFFS[1];
-  const n = map.trincheiras.length;
+  const n = map.trincheiras.length, bp = bonus(up), baseP = BASE_HP * bp.base;
   return {
     t: 0, seed, rand: rng(seed), map, diff,
     trenches: map.trincheiras.map((x, i) => ({ x, owner: i === 0 ? 'p' : i === n - 1 ? 'e' : null })),
-    bases: { p: { x: 0, hp: BASE_HP, cd: 0 }, e: { x: 1000, hp: BASE_HP, cd: 0 } },
+    bases: { p: { x: 0, hp: baseP, max: baseP, cd: 0 }, e: { x: 1000, hp: BASE_HP, max: BASE_HP, cd: 0 } },
+    bonus: { p: bp, e: NO_BONUS },
     money: { p: START_MONEY, e: START_MONEY },
     units: [], nextId: 1,
     kills: { p: 0, e: 0 },
@@ -52,7 +69,8 @@ function buy(s, side, typeId) {
   const def = UNITS[typeId];
   if (s.over || !def || s.money[side] < def.custo || alive(s, side) >= MAX_UNITS) return false;
   s.money[side] -= def.custo;
-  s.units.push({ id: s.nextId++, side, type: typeId, hp: def.vida,
+  const hp = def.vida * s.bonus[side].vida;
+  s.units.push({ id: s.nextId++, side, type: typeId, hp, max: hp,
     x: s.bases[side].x, at: side === 'p' ? -1 : N(s), target: firstTrench(s, side), cd: 0 });
   return true;
 }
@@ -92,9 +110,18 @@ function order(s, side, dir) {
   }
 }
 
+// Quem avança para no alcance do inimigo mais próximo à frente e atira dali (ninguém se encosta).
+function blocked(s, u, dir) {
+  const r = UNITS[u.type].alcance;
+  for (const o of s.units) if (o.side !== u.side && o.hp > 0) { const d = (o.x - u.x) * dir; if (d >= 0 && d <= r) return true; }
+  return false;
+}
+
 function move(s, dt) {
   for (const u of s.units) {
     const dx = destX(s, u.side, u.target), v = UNITS[u.type].velocidade * s.map.lama * dt;
+    const dir = Math.sign(dx - u.x);
+    if (dir === (u.side === 'p' ? 1 : -1) && blocked(s, u, dir)) continue;
     if (Math.abs(dx - u.x) <= v) { u.x = dx; u.at = u.target; }
     else u.x += Math.sign(dx - u.x) * v;
   }
@@ -139,13 +166,14 @@ function combat(s, dt) {
     if (tgt) alvoX = tgt.x;
     else if (assaulting && Math.abs(base.x - u.x) <= def.alcance) alvoX = base.x;
     else continue;
-    u.cd = def.cadencia;
+    const b = s.bonus[u.side], dano = def.dano * b.dano;
+    u.cd = def.cadencia / b.cadencia;
     if (def.area > 0) {
-      for (const v of s.units) if (v.side === foe && Math.abs(v.x - alvoX) <= def.area) v.hp -= def.dano;
-      if (Math.abs(base.x - alvoX) <= def.area) base.hp -= def.dano;
+      for (const v of s.units) if (v.side === foe && Math.abs(v.x - alvoX) <= def.area) v.hp -= dano;
+      if (assaulting && Math.abs(base.x - alvoX) <= def.area) base.hp -= dano;
       emit(s, { tipo: 'explosao', side: u.side, x: u.x, alvoX });
     } else {
-      if (tgt) tgt.hp -= def.dano * coverMul(s, tgt, u); else base.hp -= def.dano;
+      if (tgt) tgt.hp -= dano * coverMul(s, tgt, u); else base.hp -= dano;
       emit(s, { tipo: 'tiro', side: u.side, x: u.x, alvoX, type: u.type });
     }
   }
@@ -229,6 +257,6 @@ function aiThink(s) {
   if (mine / Math.max(1, defended(s, 'p', front - 1)) > s.diff.avancar && alive(s, 'e') >= s.diff.minTropa) order(s, 'e', 1);
 }
 
-return { MAX_UNITS, INCOME, START_MONEY, BASE_HP, UNITS, UNIT_ORDER, MAPS, DIFFS, rng, createGame,
+return { POINTS, UPGRADES, UPGRADE_MAX, UPGRADE_STEP, upgradeCost, bonus, MAX_UNITS, INCOME, START_MONEY, BASE_HP, UNITS, UNIT_ORDER, MAPS, DIFFS, rng, createGame,
   firstTrench, alive, buy, step, aiThink, destX, isSettled, contested, ownsAll, order, coverMul, BASE_GUN, strength, chooseType };
 });

@@ -90,3 +90,35 @@ test('advance keeps base attackers on the base after a trench is lost', () => {
   T.order(s, 'e', 1);
   assert.equal(e.target, -1);
 });
+
+test('advancing soldier stops at its range from the enemy and never touches it', () => {
+  const s = game();
+  const e = place(s, 'e', 'fuzileiro', 1, { hp: 1e9 });
+  const p = place(s, 'p', 'fuzileiro', 0, { hp: 1e9 });
+  T.order(s, 'p', 1);
+  run(s, 20);
+  assert.ok(Math.abs((e.x - p.x) - T.UNITS.fuzileiro.alcance) <= 1, `gap ${e.x - p.x}`);
+  assert.equal(p.at, 0);
+  assert.equal(s.trenches[1].owner, 'e');
+});
+
+test('soldier walks into the trench once its defenders are gone', () => {
+  const s = game();
+  const e = place(s, 'e', 'fuzileiro', 1, { hp: 1e9 });
+  const p = place(s, 'p', 'fuzileiro', 0, { hp: 1e9 });
+  T.order(s, 'p', 1);
+  run(s, 20);
+  s.units.splice(s.units.indexOf(e), 1);
+  run(s, 20);
+  assert.equal(p.at, 1);
+  assert.equal(s.trenches[1].owner, 'p');
+});
+
+test('retreat is never blocked by enemies', () => {
+  const s = game();
+  const p = place(s, 'p', 'fuzileiro', 1, { hp: 1e9 });
+  place(s, 'e', 'fuzileiro', 2, { x: 520, hp: 1e9, target: 1, at: 2 });
+  T.order(s, 'p', -1);
+  run(s, 15);
+  assert.equal(p.at, 0);
+});

@@ -25,7 +25,8 @@ Um jogo de guerra de trincheiras para o portal `games/`, no mesmo espírito do A
 - **[Claude]** Um soldado não avança se a trincheira dele está em disputa (há inimigos nela).
 - **[Claude]** Uma trincheira é **dominada** por um lado quando só soldados desse lado estão nela. Vazia, ela continua com o último dono. No início, a primeira trincheira é do jogador, a última é do inimigo, as do meio são de ninguém.
 - **[Claude]** Avançar a partir da última trincheira só leva até a base inimiga se **todas** as trincheiras forem do jogador. Quem já está atacando a base continua atacando mesmo que uma trincheira seja perdida depois.
-- **[Claude]** Dentro da trincheira o soldado tem **cobertura** (recebe 40% do dano), exceto contra quem está na mesma trincheira (combate corpo a corpo) e contra granadas.
+- **[Denis]** Os soldados **não encostam** uns nos outros e só atacam **à distância**: quem está avançando para quando um inimigo entra no seu alcance e atira dali; só entra na trincheira quando ela fica vazia. Recuar nunca é bloqueado.
+- **[Claude]** Dentro da trincheira o soldado tem **cobertura** (recebe 40% do dano), exceto contra granadas.
 - **[Claude]** Soldados atiram sozinhos no inimigo mais próximo ao alcance, inclusive andando.
 - **[Claude]** As bases têm uma metralhadora fraca de defesa e 1000 de vida.
 - **[Claude]** Vitória: base inimiga chega a 0. Derrota: sua base chega a 0. O computador segue as mesmas regras (compra, avança, recua, ataca sua base).
@@ -65,7 +66,14 @@ Cada mapa tem paleta de cores própria (céu, chão, trincheira).
 | Veterano | 150% | 2 s | compra para combater o que você tem; segura a trincheira até ter muita vantagem |
 | General | 220% | 1,2 s | igual Veterano, compra 2 por vez e só ataca com exército grande |
 
-Ajustado com partidas simuladas contra um jogador simples (junta 6 soldados e avança): o jogador vence ~100% no Recruta, ~28% no Soldado, ~16% no Veterano e ~3% no General (64 partidas por nível). O computador leva em conta a cobertura de quem está entrincheirado antes de atacar.
+Ajustado com partidas simuladas contra um jogador simples (junta 6 soldados e avança), com o combate à distância: sem melhorias o jogador vence ~100% no Recruta, ~69% no Soldado, ~30% no Veterano e ~8% no General; com todas as melhorias no máximo, 100% / 100% / 89% / 86% (64 partidas por nível).
+
+### Habilidades **[Denis]**
+
+- Cada vitória dá pontos de habilidade: Recruta **1**, Soldado **2**, Veterano **4**, General **7** (em toda vitória).
+- No menu, o botão **Habilidades** abre uma árvore com 4 lados: **vida dos soldados**, **vida da base**, **dano dos soldados** e **velocidade de tiro**.
+- Cada nível dá **+5%** e vai até o nível **10** (+50%). **[Claude]** Preço sem exagero: níveis 1–5 custam 1 ponto, níveis 6–10 custam 2 (15 pontos por lado, 60 no total).
+- As melhorias valem só para o jogador e ficam salvas no aparelho. O computador leva em conta a cobertura de quem está entrincheirado antes de atacar.
 
 ### Telas **[Claude]**
 
