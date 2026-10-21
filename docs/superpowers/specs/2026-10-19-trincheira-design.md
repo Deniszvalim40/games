@@ -77,6 +77,11 @@ Ajustado com partidas simuladas contra um jogador simples (junta 6 soldados e av
 - Cada nível dá **+5%** e vai até o nível **10** (+50%). **[Claude]** Preço sem exagero: níveis 1–5 custam 1 ponto, níveis 6–10 custam 2 (15 pontos por lado, 60 no total).
 - As melhorias valem só para o jogador e ficam salvas no aparelho. O computador leva em conta a cobertura de quem está entrincheirado antes de atacar.
 
+### Prestígio e Rank **[Denis]**
+
+- Com a árvore inteira completa (todos os lados no nível 10) aparece o botão **★ Prestígio**. Ele zera a árvore e os pontos e dá **+1 prestígio**; cada prestígio dá **+3% de dinheiro por segundo** para sempre (só para o jogador).
+- No lado direito do menu fica o botão **🏆 Rank**, que mostra quem tem mais prestígios, pelo **apelido digitado** pela pessoa (até 16 letras). **[Claude]** O rank é compartilhado no link do jogo no claude.ai (top 10, cada pessoa grava só a própria linha); na versão local/instalada aparece só você.
+
 ### Telas **[Claude]**
 
 Menu → escolher mapa → escolher dificuldade → partida → fim (Vitória/Derrota, tempo, abates, Jogar de novo / Menu). Pausa a qualquer momento. No celular em pé, aviso "Gire o celular". O jogo guarda no aparelho quais combinações mapa+dificuldade você já venceu e mostra uma estrela no cartão do mapa.

@@ -39,8 +39,12 @@ const UPGRADE_MAX = 10, UPGRADE_STEP = 0.05;
 const upgradeCost = lvl => lvl >= UPGRADE_MAX ? Infinity : lvl < 5 ? 1 : 2;
 function bonus(up) {
   const m = id => 1 + UPGRADE_STEP * Math.max(0, Math.min(UPGRADE_MAX, (up && up[id]) | 0));
-  return { vida: m('vida'), base: m('base'), dano: m('dano'), cadencia: m('cadencia') };
+  const prest = Math.max(0, (up && up.prestigio) | 0);
+  return { vida: m('vida'), base: m('base'), dano: m('dano'), cadencia: m('cadencia'), renda: 1 + PRESTIGE_STEP * prest };
 }
+// Prestígio: com a árvore toda no nível 10, zera tudo e ganha +3% de dinheiro por segundo para sempre.
+const PRESTIGE_STEP = 0.03;
+const treeDone = up => !!up && UPGRADES.every(g => (up[g.id] | 0) >= UPGRADE_MAX);
 const NO_BONUS = bonus(null);
 
 function rng(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
@@ -224,7 +228,7 @@ function combat(s, dt) {
 function step(s, dt) {
   if (s.over) return;
   s.t += dt;
-  s.money.p += INCOME * dt;
+  s.money.p += INCOME * dt * s.bonus.p.renda;
   s.money.e += INCOME * dt * s.diff.renda;
   s.ai.cd -= dt;
   if (s.ai.cd <= 0) { s.ai.cd = s.diff.intervalo; aiThink(s); }
@@ -282,6 +286,6 @@ function aiThink(s) {
   if (mine / Math.max(1, defended(s, 'p', front - 1)) > s.diff.avancar && alive(s, 'e') >= s.diff.minTropa) order(s, 'e', 1);
 }
 
-return { POINTS, UPGRADES, UPGRADE_MAX, UPGRADE_STEP, upgradeCost, bonus, MAX_UNITS, INCOME, START_MONEY, BASE_HP, UNITS, UNIT_ORDER, MAPS, DIFFS, rng, createGame,
+return { PRESTIGE_STEP, treeDone, POINTS, UPGRADES, UPGRADE_MAX, UPGRADE_STEP, upgradeCost, bonus, MAX_UNITS, INCOME, START_MONEY, BASE_HP, UNITS, UNIT_ORDER, MAPS, DIFFS, rng, createGame,
   firstTrench, alive, buy, step, aiThink, destX, isSettled, contested, ownsAll, order, coverMul, BASE_GUN, strength, chooseType };
 });

@@ -18,11 +18,22 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);overflow:hid
 canvas{display:block;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)}
 #rot{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;background:var(--bg);color:var(--fg);font:700 20px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;text-align:center;padding:16px}
 #rot span{font-size:54px}
+#nick{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(8,12,9,.7);font:600 16px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+#nick[hidden]{display:none}
+#nick form{display:flex;flex-direction:column;gap:12px;width:min(340px,calc(100vw - 32px));padding:20px;border-radius:14px;background:#16211a;border:2px solid #ffd54a;color:var(--fg)}
+#nick label{font-weight:800;font-size:18px}
+#nick input{font:inherit;padding:10px 12px;border-radius:10px;border:2px solid rgba(255,255,255,.2);background:#0d1410;color:var(--fg);user-select:text;-webkit-user-select:text}
+#nick input:focus{outline:none;border-color:#8fd16f}
+#nick .row{display:flex;gap:10px}
+#nick button{flex:1;font:inherit;font-weight:800;padding:10px;border-radius:10px;border:2px solid rgba(255,255,255,.18);background:#1d2b20;color:var(--fg);cursor:pointer}
+#nick button[type=submit]{background:#2d4a22;border-color:#8fd16f}
+#nick button:focus-visible{outline:2px solid #ffd54a}
 @media (orientation:portrait){#rot{display:flex}}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
+<div id="nick" hidden><form><label for="nick-in">Seu apelido no rank</label><input id="nick-in" maxlength="16" autocomplete="off" placeholder="Ex.: Sargento Zé"><div class="row"><button type="button" id="nick-no">Cancelar</button><button type="submit">Salvar</button></div></form></div>
 <div id="rot"><span>📱↻</span>Gire o celular para jogar</div>
 <script src="logic.js"></script>
 <script>
@@ -84,13 +95,56 @@ let points=0,ups={vida:0,base:0,dano:0,cadencia:0},gained=0;
 try{points=Math.max(0,parseInt(localStorage.getItem('tr_pontos'),10)||0)}catch(e){}
 try{const o=JSON.parse(localStorage.getItem('tr_melhorias')||'{}')||{};for(const k in ups)ups[k]=Math.max(0,Math.min(T.UPGRADE_MAX,o[k]|0))}catch(e){}
 function saveProgress(){try{localStorage.setItem('tr_pontos',String(points));localStorage.setItem('tr_melhorias',JSON.stringify(ups))}catch(e){}}
+let prest=0,apelido='';
+try{prest=Math.max(0,parseInt(localStorage.getItem('tr_prestigio'),10)||0);apelido=(localStorage.getItem('tr_apelido')||'').slice(0,16)}catch(e){}
+function doPrestige(){
+  if(!T.treeDone(ups))return;
+  prest++;points=0;for(const k in ups)ups[k]=0;saveProgress();
+  try{localStorage.setItem('tr_prestigio',String(prest))}catch(e){}
+  pushRank();screen='habilidades';sfx.vitoria();
+  if(!apelido)askNick();
+}
+
+// Rank online: banco compartilhado do link no claude.ai (rank/<id da pessoa> = {apelido, prestigios}).
+const rank={estado:'carregando',lista:[],escrita:true};
+let rdb=null,rid=null,rq=Promise.resolve();
+function pushRank(){
+  if(!rdb||!rid||!rank.escrita)return;
+  const data={apelido:apelido||'',prestigios:prest};
+  rq=rq.then(()=>rdb.doc('rank/'+rid).set(data)).catch(()=>{rank.escrita=false});
+}
+(async()=>{
+  try{
+    const c=window.claude;if(!c||!c.use){rank.estado='offline';return}
+    const[db,user]=await Promise.all([c.use('db'),c.use('user')]);
+    rid=user?await user.id():null;
+    if(!db||!rid){rank.estado='offline';return}
+    rdb=db;let synced=false;
+    db.collection('rank').orderBy('prestigios','desc').limit(10).onSnapshot(snap=>{
+      rank.lista=snap.docs.map(d=>({id:d.id,...d.data()}));rank.estado='ok';
+      if(!synced&&!snap.metadata.fromCache){synced=true;
+        db.doc('rank/'+rid).get().then(d=>{const v=d.exists?d.data():null;
+          if((prest>0||apelido)&&(!v||v.prestigios!==prest||v.apelido!==apelido))pushRank()}).catch(()=>{})}
+    },()=>{rank.estado='offline'});
+  }catch(e){rank.estado='offline'}
+})();
+
+// Campo de apelido (HTML por cima do canvas).
+const nickEl=document.getElementById('nick'),nickIn=document.getElementById('nick-in');
+function askNick(){nickIn.value=apelido;nickEl.hidden=false;setTimeout(()=>nickIn.focus(),0)}
+nickEl.querySelector('form').addEventListener('submit',e=>{
+  e.preventDefault();const v=nickIn.value.replace(/\s+/g,' ').trim().slice(0,16);
+  nickEl.hidden=true;if(!v||v===apelido)return;
+  apelido=v;try{localStorage.setItem('tr_apelido',v)}catch(e){}pushRank();
+});
+document.getElementById('nick-no').addEventListener('click',()=>{nickEl.hidden=true});
 function upgrade(id){const c=T.upgradeCost(ups[id]);if(points<c){sfx.nao();return}points-=c;ups[id]++;saveProgress();beep(523,.08,'triangle',.05);beep(784,.12,'triangle',.05,0,.07)}
 
 // ---------- estado ----------
 let screen='menu',game=null,pick={map:null,diff:null},fx=[],acc=0,overT=0,ui=[],hover=-1;
 
 function startGame(){
-  game=T.createGame(pick.map,pick.diff,(Date.now()^Math.floor(Math.random()*1e9))>>>0,ups);
+  game=T.createGame(pick.map,pick.diff,(Date.now()^Math.floor(Math.random()*1e9))>>>0,{...ups,prestigio:prest});
   fx=[];acc=0;overT=0;gained=0;screen='jogo';
 }
 function pause(){if(screen==='jogo'){screen='pausa';beep(520,.08,'triangle',.04)}}
@@ -111,6 +165,7 @@ cv.addEventListener('pointerdown',e=>{
 });
 cv.addEventListener('pointermove',e=>{const[x,y]=logical(e);hover=hit(x,y);cv.style.cursor=hover>=0&&!ui[hover].off?'pointer':'default'});
 addEventListener('keydown',e=>{
+  if(!nickEl.hidden){if(e.key==='Escape')nickEl.hidden=true;return}
   initAudio();const k=e.key;
   if(screen==='jogo'){
     if(k>='1'&&k<='4')buy(+k-1);
@@ -270,7 +325,8 @@ function drawMenu(){
   txt('Compre soldados, tome as trincheiras e destrua a base inimiga',W/2,178,18,'#c9d6a3','center',600);
   button(W/2-120,210,240,64,'JOGAR',()=>{screen='mapa'},{size:26,bg:'#2d4a22',border:'#8fd16f'});
   button(W/2-120,286,240,50,'HABILIDADES',()=>{screen='habilidades'},{size:18,sub:points+(points===1?' ponto':' pontos')});
-  txt('1/2/3 compram · A/D recuam/avançam · P pausa',W/2,500,14,'rgba(238,243,234,.55)','center',500);
+  button(W-224,226,200,64,'🏆 RANK',()=>{screen='rank';if(!apelido)askNick()},{size:22,bg:'#2a2a14',border:'#ffd54a',fg:'#ffd54a',sub:prest+(prest===1?' prestígio':' prestígios')});
+  txt('1/2/3/4 compram · A/D recuam/avançam · P pausa',W/2,500,14,'rgba(238,243,234,.55)','center',500);
 }
 function drawMapPick(){
   ctx.fillStyle='#0d1410';ctx.fillRect(0,0,W,H);
@@ -325,7 +381,37 @@ function drawSkills(){
     button(x+cw-136,y+60,122,34,max?'Máximo':'+5% · '+cost+(cost===1?' pt':' pts'),()=>upgrade(u.id),{size:14,off:max||points<cost});
   });
   button(24,474,140,48,'◀ Voltar',()=>{screen='menu'});
-  txt('Vença partidas para ganhar pontos: Recruta 1 · Soldado 2 · Veterano 4 · General 7',W/2+80,498,13,'rgba(238,243,234,.55)','center',500);
+  if(prest>0)txt('Prestígio '+prest+' · +'+Math.round(prest*T.PRESTIGE_STEP*100)+'% de dinheiro',24,38,15,'#ffd54a','left',800);
+  if(T.treeDone(ups))button(W-264,474,240,48,'★ PRESTÍGIO',()=>{screen='prestigio'},{size:20,bg:'#4a3b10',border:'#ffd54a',fg:'#ffd54a'});
+  else txt('Vença partidas para ganhar pontos: Recruta 1 · Soldado 2 · Veterano 4 · General 7',W/2+80,498,13,'rgba(238,243,234,.55)','center',500);
+}
+function drawPrestige(){
+  drawSkills();ui=[];panel();
+  rr(W/2-300,120,600,300,18);ctx.fillStyle='#16211a';ctx.fill();ctx.strokeStyle='#ffd54a';ctx.lineWidth=3;ctx.stroke();
+  txt('★ Prestígio '+(prest+1),W/2,168,34,'#ffd54a','center',900);
+  txt('A árvore de habilidades e os pontos voltam a zero.',W/2,222,17,'#eef3ea','center',600);
+  txt('Em troca você ganha +3% de dinheiro por segundo para sempre.',W/2,250,17,'#eef3ea','center',600);
+  txt('Total depois: +'+Math.round((prest+1)*T.PRESTIGE_STEP*100)+'% de dinheiro · conta no Rank',W/2,284,15,'#c9d6a3','center',600);
+  button(W/2-250,330,240,58,'Cancelar',()=>{screen='habilidades'},{size:19});
+  button(W/2+10,330,240,58,'Fazer prestígio',doPrestige,{size:19,bg:'#4a3b10',border:'#ffd54a',fg:'#ffd54a'});
+}
+function drawRank(){
+  ctx.fillStyle='#0d1410';ctx.fillRect(0,0,W,H);
+  txt('🏆 Rank de prestígio',W/2,46,32,'#ffd54a','center',900);
+  const x=W/2-280,w=560,dim='rgba(238,243,234,.5)';
+  txt('#',x+24,96,13,dim,'center',700);txt('APELIDO',x+56,96,13,dim,'left',700);txt('PRESTÍGIOS',x+w-20,96,13,dim,'right',700);
+  const rows=rank.estado==='ok'?rank.lista:[{id:'eu',apelido,prestigios:prest}];
+  rows.forEach((r,i)=>{const y=110+i*34,me=r.id===rid||r.id==='eu',medal=['#ffd54a','#cfd8dc','#d79a5b'][i];
+    rr(x,y,w,30,8);ctx.fillStyle=me?'#2a3a1f':'#16211a';ctx.fill();if(me){ctx.strokeStyle='#8fd16f';ctx.lineWidth=2;ctx.stroke()}
+    txt(String(i+1),x+24,y+15,16,medal||'#eef3ea','center',900);
+    txt(String(r.apelido||'Sem apelido').slice(0,16)+(me?' (você)':''),x+56,y+15,16,r.apelido?'#eef3ea':dim,'left',700);
+    txt(String(r.prestigios|0),x+w-20,y+15,16,'#ffd54a','right',900);
+  });
+  const msg=rank.estado==='carregando'?'Carregando o rank…':rank.estado==='offline'?'O rank online funciona no link do jogo no claude.ai. Aqui só aparece você.':
+    !rank.escrita?'Você pode ver o rank, mas não tem permissão para entrar nele.':rows.length?'':'Ninguém fez prestígio ainda. Complete a árvore de habilidades!';
+  if(msg)txt(msg,W/2,110+rows.length*34+24,15,'#c9d6a3','center',600);
+  button(24,474,140,48,'◀ Voltar',()=>{screen='menu'});
+  button(W-264,474,240,48,apelido?'✎ '+apelido:'✎ Escolher apelido',askNick,{size:17});
 }
 function drawPause(){
   panel();txt('PAUSA',W/2,170,48,'#eef3ea','center',900);
@@ -358,6 +444,8 @@ function loop(now){
   else if(screen==='mapa')drawMapPick();
   else if(screen==='dificuldade')drawDiffPick();
   else if(screen==='habilidades')drawSkills();
+  else if(screen==='prestigio')drawPrestige();
+  else if(screen==='rank')drawRank();
   else{drawGame(screen==='jogo'?dt:0);ui=ui.filter(()=>screen==='jogo');if(screen==='pausa')drawPause();else if(screen==='fim')drawEnd()}
   requestAnimationFrame(loop);
 }
