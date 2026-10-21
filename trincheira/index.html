@@ -335,7 +335,7 @@ function drawMenu(){
   txt('Compre soldados, tome as trincheiras e destrua a base inimiga',W/2,178,18,'#c9d6a3','center',600);
   button(W/2-120,210,240,64,'JOGAR',()=>{screen='mapa'},{size:26,bg:'#2d4a22',border:'#8fd16f'});
   button(W/2-120,286,240,50,'HABILIDADES',()=>{screen='habilidades'},{size:18,sub:points+(points===1?' ponto':' pontos')});
-  button(W-224,226,200,64,'🏆 RANK',()=>{screen='rank';if(!apelido)askNick()},{size:22,bg:'#2a2a14',border:'#ffd54a',fg:'#ffd54a',sub:prest+(prest===1?' prestígio':' prestígios')});
+  button(W-156,16,140,52,'🏆 RANK',()=>{screen='rank';if(!apelido)askNick()},{size:16,bg:'#2a2a14',border:'#ffd54a',fg:'#ffd54a',sub:prest+(prest===1?' prestígio':' prestígios')});
   txt('1/2/3/4 compram · A/D recuam/avançam · P pausa',W/2,500,14,'rgba(238,243,234,.55)','center',500);
 }
 function drawMapPick(){
