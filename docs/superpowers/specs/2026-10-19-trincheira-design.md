@@ -80,11 +80,11 @@ Ajustado com partidas simuladas contra um jogador simples (junta 6 soldados e av
 ### Prestígio e Rank **[Denis]**
 
 - Com a árvore inteira completa (todos os lados no nível 10) aparece o botão **★ Prestígio**. Ele zera a árvore e os pontos e dá **+1 prestígio**; cada prestígio dá **+3% de dinheiro por segundo** para sempre (só para o jogador).
-- No lado direito do menu fica o botão **🏆 Rank**, que mostra quem tem mais prestígios, pelo **apelido digitado** pela pessoa (até 16 letras). **[Claude]** O rank é compartilhado no link do jogo no claude.ai (top 10, cada pessoa grava só a própria linha); na versão local/instalada aparece só você.
+- No lado direito do menu fica o botão **🏆 Rank**, que mostra quem tem mais prestígios, pelo **apelido digitado** pela pessoa (até 16 letras). O rank vai até o **top 250** **[Denis]**; a lista rola e mostra a sua posição. **[Claude]** O rank é compartilhado no link do jogo no claude.ai (cada pessoa grava só a própria linha); na versão local/instalada aparece só você.
 
 ### Telas **[Claude]**
 
-Menu → escolher mapa → escolher dificuldade → partida → fim (Vitória/Derrota, tempo, abates, Jogar de novo / Menu). Pausa a qualquer momento. No celular em pé, aviso "Gire o celular". O jogo guarda no aparelho quais combinações mapa+dificuldade você já venceu e mostra uma estrela no cartão do mapa.
+Menu → escolher mapa → escolher dificuldade → partida → fim (Vitória/Derrota, tempo, abates, Jogar de novo / Menu). Pausa a qualquer momento. No celular em pé, aviso "Gire o celular". O jogo guarda no aparelho quais combinações mapa+dificuldade você já venceu e mostra uma estrela no cartão do mapa. **[Denis]** Uma dificuldade só libera depois de vencer a anterior; **[Claude]** vale por mapa (Recruta sempre aberto, Soldado pede Recruta vencido naquele mapa, e assim por diante).
 
 ### Controles **[Claude]**
 

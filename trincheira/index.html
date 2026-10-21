@@ -106,7 +106,8 @@ function doPrestige(){
 }
 
 // Rank online: banco compartilhado do link no claude.ai (rank/<id da pessoa> = {apelido, prestigios}).
-const rank={estado:'carregando',lista:[],escrita:true};
+const RANK_MAX=250,RANK_ROWS=9,RANK_H=34;
+const rank={estado:'carregando',lista:[],escrita:true,rol:0};
 let rdb=null,rid=null,rq=Promise.resolve();
 function pushRank(){
   if(!rdb||!rid||!rank.escrita)return;
@@ -120,7 +121,7 @@ function pushRank(){
     rid=user?await user.id():null;
     if(!db||!rid){rank.estado='offline';return}
     rdb=db;let synced=false;
-    db.collection('rank').orderBy('prestigios','desc').limit(10).onSnapshot(snap=>{
+    db.collection('rank').orderBy('prestigios','desc').limit(RANK_MAX).onSnapshot(snap=>{
       rank.lista=snap.docs.map(d=>({id:d.id,...d.data()}));rank.estado='ok';
       if(!synced&&!snap.metadata.fromCache){synced=true;
         db.doc('rank/'+rid).get().then(d=>{const v=d.exists?d.data():null;
@@ -158,12 +159,17 @@ function order(dir){if(screen!=='jogo')return;T.order(game,'p',dir);sfx.ordem(di
 // ---------- entrada ----------
 function logical(e){const r=cv.getBoundingClientRect();return[(e.clientX-r.left)/scale,(e.clientY-r.top)/scale]}
 function hit(x,y){for(let i=ui.length-1;i>=0;i--){const b=ui[i];if(x>=b.x&&x<=b.x+b.w&&y>=b.y&&y<=b.y+b.h)return i}return -1}
+let dragY=null;
 cv.addEventListener('pointerdown',e=>{
   e.preventDefault();initAudio();
   const[x,y]=logical(e),i=hit(x,y);
+  dragY=screen==='rank'&&i<0?y:null;
   if(i>=0&&!ui[i].off)ui[i].fn();
 });
-cv.addEventListener('pointermove',e=>{const[x,y]=logical(e);hover=hit(x,y);cv.style.cursor=hover>=0&&!ui[hover].off?'pointer':'default'});
+addEventListener('pointerup',()=>{dragY=null});
+cv.addEventListener('wheel',e=>{if(screen==='rank'){e.preventDefault();rank.rol+=e.deltaY}},{passive:false});
+cv.addEventListener('pointermove',e=>{const[x,y]=logical(e);
+  if(dragY!==null&&e.buttons){rank.rol+=dragY-y;dragY=y}hover=hit(x,y);cv.style.cursor=hover>=0&&!ui[hover].off?'pointer':'default'});
 addEventListener('keydown',e=>{
   if(!nickEl.hidden){if(e.key==='Escape')nickEl.hidden=true;return}
   initAudio();const k=e.key;
@@ -173,6 +179,10 @@ addEventListener('keydown',e=>{
     else if(k==='d'||k==='D'||k==='ArrowRight')order(1);
     else if(k==='p'||k==='P'||k==='Escape')pause();
   }else if(screen==='pausa'&&(k==='p'||k==='P'||k==='Escape'))resume();
+  else if(screen==='rank'){
+    if(k==='ArrowDown')rank.rol+=RANK_H;else if(k==='ArrowUp')rank.rol-=RANK_H;
+    else if(k==='PageDown')rank.rol+=RANK_H*RANK_ROWS;else if(k==='PageUp')rank.rol-=RANK_H*RANK_ROWS;
+  }
 });
 document.addEventListener('visibilitychange',()=>{if(document.hidden)pause()});
 addEventListener('resize',()=>{if(portrait())pause()});
@@ -354,7 +364,9 @@ function drawDiffPick(){
   txt('Dificuldade',W/2,60,32,'#eef3ea');txt(m.nome,W/2,96,16,'#c9d6a3','center',600);
   const desc={recruta:'O inimigo ataca cedo e mal',soldado:'Uma luta equilibrada',veterano:'Defende bem e compra contra você',general:'Exército enorme. Boa sorte.'};
   T.DIFFS.forEach((d,i)=>{const y=130+i*76;
-    button(W/2-220,y,440,64,(won(m.id,d.id)?'★ ':'')+d.nome,()=>{pick.diff=d.id;startGame()},{sub:desc[d.id],size:20});
+    const ok=T.diffUnlocked(wins,m.id,d.id);
+    button(W/2-220,y,440,64,(ok?(won(m.id,d.id)?'★ ':''):'🔒 ')+d.nome,()=>{pick.diff=d.id;startGame()},
+      {sub:ok?desc[d.id]:'Vença no '+T.DIFFS[i-1].nome+' para liberar',size:20,off:!ok});
   });
   button(24,470,140,50,'◀ Voltar',()=>{screen='mapa'});
 }
@@ -397,19 +409,29 @@ function drawPrestige(){
 }
 function drawRank(){
   ctx.fillStyle='#0d1410';ctx.fillRect(0,0,W,H);
-  txt('🏆 Rank de prestígio',W/2,46,32,'#ffd54a','center',900);
+  txt('🏆 Rank de prestígio',W/2,40,32,'#ffd54a','center',900);
+  txt('Top '+RANK_MAX,W/2,72,14,'#c9d6a3','center',700);
   const x=W/2-280,w=560,dim='rgba(238,243,234,.5)';
   txt('#',x+24,96,13,dim,'center',700);txt('APELIDO',x+56,96,13,dim,'left',700);txt('PRESTÍGIOS',x+w-20,96,13,dim,'right',700);
   const rows=rank.estado==='ok'?rank.lista:[{id:'eu',apelido,prestigios:prest}];
-  rows.forEach((r,i)=>{const y=110+i*34,me=r.id===rid||r.id==='eu',medal=['#ffd54a','#cfd8dc','#d79a5b'][i];
+  const top=110,vis=Math.min(rows.length,RANK_ROWS),maxRol=Math.max(0,rows.length-RANK_ROWS)*RANK_H;
+  rank.rol=Math.max(0,Math.min(maxRol,rank.rol));
+  ctx.save();ctx.beginPath();ctx.rect(x-4,top-2,w+8,RANK_ROWS*RANK_H);ctx.clip();
+  rows.forEach((r,i)=>{const y=top+i*RANK_H-rank.rol;if(y<top-RANK_H||y>top+RANK_ROWS*RANK_H)return;
+    const me=r.id===rid||r.id==='eu',medal=['#ffd54a','#cfd8dc','#d79a5b'][i];
     rr(x,y,w,30,8);ctx.fillStyle=me?'#2a3a1f':'#16211a';ctx.fill();if(me){ctx.strokeStyle='#8fd16f';ctx.lineWidth=2;ctx.stroke()}
     txt(String(i+1),x+24,y+15,16,medal||'#eef3ea','center',900);
     txt(String(r.apelido||'Sem apelido').slice(0,16)+(me?' (você)':''),x+56,y+15,16,r.apelido?'#eef3ea':dim,'left',700);
     txt(String(r.prestigios|0),x+w-20,y+15,16,'#ffd54a','right',900);
   });
+  ctx.restore();
+  if(maxRol>0){const th=RANK_ROWS*RANK_H,bh=Math.max(24,th*RANK_ROWS/rows.length),by=top+(th-bh)*rank.rol/maxRol;
+    rr(x+w+8,top,6,th,3);ctx.fillStyle='rgba(255,255,255,.08)';ctx.fill();rr(x+w+8,by,6,bh,3);ctx.fillStyle='#ffd54a';ctx.fill()}
+  const pos=rank.estado==='ok'?rows.findIndex(r=>r.id===rid):-1;
   const msg=rank.estado==='carregando'?'Carregando o rank…':rank.estado==='offline'?'O rank online funciona no link do jogo no claude.ai. Aqui só aparece você.':
-    !rank.escrita?'Você pode ver o rank, mas não tem permissão para entrar nele.':rows.length?'':'Ninguém fez prestígio ainda. Complete a árvore de habilidades!';
-  if(msg)txt(msg,W/2,110+rows.length*34+24,15,'#c9d6a3','center',600);
+    !rank.escrita?'Você pode ver o rank, mas não tem permissão para entrar nele.':!rows.length?'Ninguém fez prestígio ainda. Complete a árvore de habilidades!':
+    pos>=0?'Você está em #'+(pos+1)+(maxRol>0?' · role a lista para ver mais':''):maxRol>0?'Role a lista para ver mais':'';
+  if(msg)txt(msg,W/2,top+vis*RANK_H+22,15,'#c9d6a3','center',600);
   button(24,474,140,48,'◀ Voltar',()=>{screen='menu'});
   button(W-264,474,240,48,apelido?'✎ '+apelido:'✎ Escolher apelido',askNick,{size:17});
 }

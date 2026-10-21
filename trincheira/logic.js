@@ -45,6 +45,11 @@ function bonus(up) {
 // Prestígio: com a árvore toda no nível 10, zera tudo e ganha +3% de dinheiro por segundo para sempre.
 const PRESTIGE_STEP = 0.03;
 const treeDone = up => !!up && UPGRADES.every(g => (up[g.id] | 0) >= UPGRADE_MAX);
+// Cada dificuldade só abre depois de vencer a anterior naquele mapa (vitórias guardadas como 'mapa:dificuldade').
+function diffUnlocked(wins, mapId, diffId) {
+  const i = DIFFS.findIndex(d => d.id === diffId);
+  return i === 0 || (i > 0 && (wins || []).includes(mapId + ':' + DIFFS[i - 1].id));
+}
 const NO_BONUS = bonus(null);
 
 function rng(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
@@ -286,6 +291,6 @@ function aiThink(s) {
   if (mine / Math.max(1, defended(s, 'p', front - 1)) > s.diff.avancar && alive(s, 'e') >= s.diff.minTropa) order(s, 'e', 1);
 }
 
-return { PRESTIGE_STEP, treeDone, POINTS, UPGRADES, UPGRADE_MAX, UPGRADE_STEP, upgradeCost, bonus, MAX_UNITS, INCOME, START_MONEY, BASE_HP, UNITS, UNIT_ORDER, MAPS, DIFFS, rng, createGame,
+return { PRESTIGE_STEP, treeDone, diffUnlocked, POINTS, UPGRADES, UPGRADE_MAX, UPGRADE_STEP, upgradeCost, bonus, MAX_UNITS, INCOME, START_MONEY, BASE_HP, UNITS, UNIT_ORDER, MAPS, DIFFS, rng, createGame,
   firstTrench, alive, buy, step, aiThink, destX, isSettled, contested, ownsAll, order, coverMul, BASE_GUN, strength, chooseType };
 });
