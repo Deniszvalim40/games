@@ -43,6 +43,7 @@ Um jogo de guerra de trincheiras para o portal `games/`, no mesmo espírito do A
 | Fuzileiro | $50 | 100 | 12 | 160 | 1,0 s | 40 | — |
 | Metralhador | $120 | 140 | 5 | 200 | 0,2 s | 25 | — |
 | Granadeiro | $150 | 90 | 35 | 130 | 2,5 s | 35 | ignora cobertura, acerta todos num raio de 40 |
+| Sniper | $300 | 70 | 45 | mapa todo | 3,0 s | 40 | **[Denis]** fica na primeira trincheira (não obedece Avançar/Recuar) e acerta qualquer soldado inimigo, mas **nunca** a base. **[Claude]** O computador não compra sniper. |
 
 (Distâncias em unidades do mundo, que vai de 0 = base do jogador a 1000 = base inimiga. Velocidade em unidades por segundo.)
 
@@ -81,8 +82,8 @@ Menu → escolher mapa → escolher dificuldade → partida → fim (Vitória/De
 
 ### Controles **[Claude]**
 
-- Toque/clique nos botões na parte de baixo: 3 botões de compra (com preço; apagados sem dinheiro), ◀ Recuar, Avançar ▶.
-- Teclado: 1/2/3 compram, A/← recua, D/→ avança, P/Esc pausa.
+- Toque/clique nos botões na parte de baixo: 4 botões de compra (com preço; apagados sem dinheiro), ◀ Recuar, Avançar ▶.
+- Teclado: 1/2/3/4 compram, A/← recua, D/→ avança, P/Esc pausa.
 
 ## Objetivos / não-objetivos
 

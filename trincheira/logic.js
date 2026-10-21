@@ -8,8 +8,10 @@ const UNITS = {
   fuzileiro:   { id: 'fuzileiro',   nome: 'Fuzileiro',   custo: 50,  vida: 100, dano: 12, alcance: 160, cadencia: 1.0, velocidade: 40, area: 0 },
   metralhador: { id: 'metralhador', nome: 'Metralhador', custo: 120, vida: 140, dano: 5,  alcance: 200, cadencia: 0.2, velocidade: 25, area: 0 },
   granadeiro:  { id: 'granadeiro',  nome: 'Granadeiro',  custo: 150, vida: 90,  dano: 35, alcance: 130, cadencia: 2.5, velocidade: 35, area: 40 },
+  // Fica na primeira trincheira (fixo), alcança o mapa inteiro, mas nunca atira na base.
+  sniper:      { id: 'sniper',      nome: 'Sniper',      custo: 300, vida: 70,  dano: 45, alcance: 2000, cadencia: 3.0, velocidade: 40, area: 0, fixo: true },
 };
-const UNIT_ORDER = ['fuzileiro', 'metralhador', 'granadeiro'];
+const UNIT_ORDER = ['fuzileiro', 'metralhador', 'granadeiro', 'sniper'];
 
 const MAPS = [
   { id: 'campo',    nome: 'Campo Aberto', trincheiras: [250, 500, 750],           lama: 1,   cobertura: 0.4, cores: { ceu: '#9cc3d8', chao: '#7d8f4e', trincheira: '#3b2f22' } },
@@ -97,7 +99,7 @@ function order(s, side, dir) {
   const lo = side === 'p' ? 0 : (ownsAll(s, 'e') ? -1 : 0);
   const hi = side === 'p' ? (ownsAll(s, 'p') ? n : n - 1) : n - 1;
   for (const u of s.units) {
-    if (u.side !== side) continue;
+    if (u.side !== side || UNITS[u.type].fixo) continue;
     let t;
     if (u.target !== u.at) {
       if (Math.sign(u.target - u.at) === dir * sg) continue; // já indo nessa direção
@@ -121,7 +123,7 @@ function move(s, dt) {
   for (const u of s.units) {
     const dx = destX(s, u.side, u.target), v = UNITS[u.type].velocidade * s.map.lama * dt;
     const dir = Math.sign(dx - u.x);
-    if (dir === (u.side === 'p' ? 1 : -1) && blocked(s, u, dir)) continue;
+    if (dir === (u.side === 'p' ? 1 : -1) && !UNITS[u.type].fixo && blocked(s, u, dir)) continue;
     if (Math.abs(dx - u.x) <= v) { u.x = dx; u.at = u.target; }
     else u.x += Math.sign(dx - u.x) * v;
   }
@@ -161,7 +163,7 @@ function combat(s, dt) {
     if (u.cd > 0) continue;
     const def = UNITS[u.type], foe = opp(u.side), base = s.bases[foe];
     const tgt = nearestEnemy(s, u.side, u.x, def.alcance);
-    const assaulting = u.target === (u.side === 'p' ? N(s) : -1);
+    const assaulting = !def.fixo && u.target === (u.side === 'p' ? N(s) : -1);
     let alvoX;
     if (tgt) alvoX = tgt.x;
     else if (assaulting && Math.abs(base.x - u.x) <= def.alcance) alvoX = base.x;
@@ -224,7 +226,7 @@ function strength(s, side, idx) {
 
 function chooseType(s) {
   const r = s.rand();
-  if (s.diff.compra === 'aleatoria') return UNIT_ORDER[Math.floor(r * 3)];
+  if (s.diff.compra === 'aleatoria') return UNIT_ORDER[Math.floor(r * 3)]; // o computador não compra sniper
   if (s.diff.compra === 'pesos') return r < 0.5 ? 'fuzileiro' : r < 0.8 ? 'metralhador' : 'granadeiro';
   const p = s.units.filter(u => u.side === 'p');
   const packed = s.trenches.some((_, i) => p.filter(u => u.at === i && isSettled(s, u)).length >= 3);
