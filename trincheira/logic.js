@@ -59,7 +59,7 @@ function createGame(mapId, diffId, seed, up) {
     kills: { p: 0, e: 0 },
     over: null,
     events: [],
-    ai: { cd: diff.intervalo },
+    ai: { cd: diff.intervalo, reforcos: true, reforco: 0 },
   };
 }
 
@@ -67,14 +67,29 @@ const N = s => s.trenches.length;
 const firstTrench = (s, side) => side === 'p' ? 0 : N(s) - 1;
 const alive = (s, side) => s.units.reduce((c, u) => c + (u.side === side ? 1 : 0), 0);
 
+function spawn(s, side, typeId) {
+  const hp = UNITS[typeId].vida * s.bonus[side].vida;
+  s.units.push({ id: s.nextId++, side, type: typeId, hp, max: hp,
+    x: s.bases[side].x, at: side === 'p' ? -1 : N(s), target: firstTrench(s, side), cd: 0 });
+}
+
 function buy(s, side, typeId) {
   const def = UNITS[typeId];
   if (s.over || !def || s.money[side] < def.custo || alive(s, side) >= MAX_UNITS) return false;
   s.money[side] -= def.custo;
-  const hp = def.vida * s.bonus[side].vida;
-  s.units.push({ id: s.nextId++, side, type: typeId, hp, max: hp,
-    x: s.bases[side].x, at: side === 'p' ? -1 : N(s), target: firstTrench(s, side), cd: 0 });
+  spawn(s, side, typeId);
   return true;
+}
+
+// Base inimiga sob ataque: algum soldado do jogador indo/atacando a base.
+const baseUnderAttack = s => s.units.some(u => u.side === 'p' && u.target === N(s));
+// Reforço grátis da base inimiga enquanto ela é atacada (a cada intervalo da IA, no mínimo 2 s).
+function reinforce(s, dt) {
+  if (!s.ai.reforcos || !baseUnderAttack(s)) { s.ai.reforco = 0; return; }
+  s.ai.reforco -= dt;
+  if (s.ai.reforco > 0) return;
+  s.ai.reforco = Math.max(2, s.diff.intervalo);
+  if (alive(s, 'e') < MAX_UNITS) spawn(s, 'e', 'fuzileiro');
 }
 
 // Posição x de destino do índice idx: trincheira, ou frente da base inimiga (30 antes dela).
@@ -213,6 +228,7 @@ function step(s, dt) {
   s.money.e += INCOME * dt * s.diff.renda;
   s.ai.cd -= dt;
   if (s.ai.cd <= 0) { s.ai.cd = s.diff.intervalo; aiThink(s); }
+  reinforce(s, dt);
   move(s, dt);
   combat(s, dt);
 }
@@ -247,7 +263,14 @@ function defended(s, side, idx) {
 }
 
 function aiThink(s) {
-  for (let i = 0; i < s.diff.comprasPorVez; i++) if (!buy(s, 'e', chooseType(s))) break;
+  const emergency = baseUnderAttack(s);
+  for (let i = 0; i < s.diff.comprasPorVez; i++) {
+    let type = chooseType(s);
+    // Com a base sob ataque não dá para juntar dinheiro: compra o melhor que couber no bolso.
+    if (emergency && UNITS[type].custo > s.money.e)
+      type = ['granadeiro', 'metralhador', 'fuzileiro'].find(t => UNITS[t].custo <= s.money.e) || type;
+    if (!buy(s, 'e', type)) break;
+  }
   let front = Infinity;
   for (const u of s.units) if (u.side === 'e' && inTrench(s, u.at) && isSettled(s, u)) front = Math.min(front, u.at);
   if (front === Infinity) return;

@@ -1,9 +1,10 @@
 const T = require('../logic.js');
 
-// Jogo sem IA, para testes que montam o cenário à mão.
+// Jogo sem IA (nem reforços), para testes que montam o cenário à mão.
 function game(map = 'campo', diff = 'soldado', seed = 1) {
   const s = T.createGame(map, diff, seed);
   s.ai.cd = Infinity;
+  s.ai.reforcos = false;
   return s;
 }
 

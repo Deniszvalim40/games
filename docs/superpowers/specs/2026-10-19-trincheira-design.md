@@ -29,6 +29,7 @@ Um jogo de guerra de trincheiras para o portal `games/`, no mesmo espírito do A
 - **[Claude]** Dentro da trincheira o soldado tem **cobertura** (recebe 40% do dano), exceto contra granadas.
 - **[Claude]** Soldados atiram sozinhos no inimigo mais próximo ao alcance, inclusive andando.
 - **[Claude]** As bases têm uma metralhadora fraca de defesa e 1000 de vida.
+- **[Denis]** Mesmo com a base sendo atacada, continuam nascendo inimigos. **[Claude]** Enquanto algum soldado seu ataca a base, ela chama um fuzileiro de reforço de graça a cada 2–4 s (conforme a dificuldade), e o computador compra o melhor soldado que couber no dinheiro em vez de juntar.
 - **[Claude]** Vitória: base inimiga chega a 0. Derrota: sua base chega a 0. O computador segue as mesmas regras (compra, avança, recua, ataca sua base).
 
 ### Dinheiro **[Claude]**
