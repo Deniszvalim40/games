@@ -30,7 +30,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .gear{width:36px;height:36px;border-radius:50%;border:0;background:#ffffff12;font-size:17px;display:flex;align-items:center;justify-content:center}
 #menu{position:absolute;top:56px;right:16px;display:none;flex-direction:column;gap:8px;padding:10px;border-radius:14px;background:#121b30;border:1px solid #ffe98a55;box-shadow:0 8px 24px #0008}
 #menu.show{display:flex}
-#hmasc{flex:none;margin-top:-4px;pointer-events:none}
+#hmasc{flex:none;margin-top:10px;pointer-events:none}
 /* Mascote vaga-lume (reutilizável: mascotHTML()) */
 .mascot{display:flex;flex-direction:column;align-items:center}
 .m-title{font-weight:900;font-size:38px;letter-spacing:2px;line-height:1;color:#ffee00;text-shadow:0 0 10px #ffee0099,0 0 26px #ffb80066}
@@ -70,7 +70,6 @@ button{font:inherit;color:inherit;cursor:pointer}
 @media (prefers-reduced-motion:reduce){#play,.hf,.boss span{animation:none}.tc{transition-duration:.01s}}
 .big{padding:14px 44px;border-radius:16px;border:0;background:var(--yel);color:#2a1d00;font-weight:900;font-size:20px;box-shadow:0 0 24px #ffd23f66}
 .big:disabled{opacity:.4;box-shadow:none;cursor:default}
-.toggles{display:flex;gap:10px}
 .tg{padding:6px 14px;border-radius:12px;border:1px solid #ffe98a55;background:#ffffff12;font-size:14px}
 .tg[aria-pressed=false]{opacity:.5}
 
@@ -648,7 +647,8 @@ function startEnd(){
   [523,659,784,1047,1319].forEach((f,i)=>setTimeout(()=>{if(AC&&save.som)marimba(AC.currentTime,f,.07,master)},i*120));
   ribbonStart('end',s.n);
   const fx=$('fx');fx.innerHTML='';
-  const b=$('rib').getBoundingClientRect(),gb=game.getBoundingClientRect(),cx=b.left+b.width/2-gb.left,cy=b.top+b.height/2-gb.top;
+  // #rib ainda está fora da tela (animação de entrada); centro pelo #rw, que já está no lugar
+  const b=$('rw').getBoundingClientRect(),gb=game.getBoundingClientRect(),cx=gb.width/2,cy=b.top-gb.top+80;
   for(let i=0;i<26;i++){
     const f=document.createElement('div'),a=Math.random()*6.28,r=90+Math.random()*140;
     f.className='fl';f.style.left=cx+'px';f.style.top=cy+'px';

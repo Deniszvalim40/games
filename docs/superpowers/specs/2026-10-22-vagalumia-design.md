@@ -37,17 +37,17 @@ Jogo de quebra-cabeça para passar o tempo (sem guerra). Terceiro jogo do portal
 - Com 0 vidas, mostra o relógio e não deixa jogar.
 - "Tentar de novo" repete a mesma fase, com os mesmos potes na mesma ordem.
 
-## Faixa do nome
+## Mascote e nome
 
-- Faixa **ondulada, amarela, que acende e apaga como um vaga-lume** (brilho forte, depois quase apagada, devagar), escrita **VAGALUMIA**, levemente inclinada.
-- **Começo da fase:** entra deslizando, as letras caem uma a uma, mostra "Nível N · Difícil", e sai depois de ~2 s.
+- Um **vaga-lume animado com rosto feliz** (asas batendo, flutuando, barriga amarela que acende e apaga), com **VAGALUMIA** escrito em cima. Substitui a antiga faixa.
+- **Começo da fase:** o vaga-lume entra voando com VAGALUMIA em cima, mostra "Nível N · Difícil", e sai depois de ~2 s.
 - **Fim da fase:** entra e fica pulsando com "Nível N completo! ✨" e vaga-lumes espalhando.
-- Nas fases difíceis e super difíceis, a faixa continua amarela piscando e só muda a aura em volta (laranja ou vermelha).
+- Nas fases difíceis e super difíceis, o vaga-lume continua amarelo piscando e só muda a aura em volta (laranja ou vermelha).
 
 ## Tela inicial
 
 - **Topo:** vidas em potinhos acesos com o relógio da próxima vida; engrenagem com som e música.
-- A faixa VAGALUMIA ondulando.
+- O vaga-lume mascote com VAGALUMIA em cima.
 - **Pote grande com os níveis dentro**, subindo em zigue-zague: os vencidos em verde, o atual amarelo e maior, os difíceis com borda laranja. Vaga-lumes voando dentro.
 - **Em cima do pote:** o próximo super difícil, numa bolinha vermelha pulsando.
 - Ao vencer, os níveis descem um degrau no pote.
