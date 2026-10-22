@@ -1,0 +1,128 @@
+// Vagalumia — regras do jogo (sem DOM).
+(function (root, f) { if (typeof module === 'object' && module.exports) module.exports = f(); else root.Vagalumia = f(); })(this, function () {
+'use strict';
+
+// ===== Constantes =====
+const COLS = 5, VISIBLE_ROWS = 5, BAR = 5, POT_MIN = 12, POT_MAX = 30, MAX_LIVES = 5;
+const LIFE_MS = 600000, START_HELPS = 2, HELP_EVERY = 50, PREVIEW_UNTIL = 50;
+const PALETTE = ['#ff5a5f', '#ffd23f', '#3ddc84', '#4ea8ff', '#c77dff', '#ff9f43', '#2ee6d6', '#ff7ac8'];
+
+// ===== Aleatório determinístico =====
+function rng(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function seedFor(n) { let h = Math.imul(n | 0, 0x9E3779B1) ^ 0x5bd1e995; h = Math.imul(h ^ h >>> 15, 0x85ebca6b); h = Math.imul(h ^ h >>> 13, 0xc2b2ae35); return (h ^ h >>> 16) | 0; }
+
+// ===== Níveis =====
+function tierOf(n) { return n % 10 === 0 ? 'super' : n % 5 === 0 ? 'dificil' : 'normal'; }
+function levelParams(n) {
+  const tier = tierOf(n);
+  const base = Math.min(32, 12 + Math.floor((n - 1) / 2));
+  const size = tier === 'normal' ? base : Math.min(40, Math.round(base * (tier === 'dificil' ? 1.3 : 1.6)));
+  const colors = Math.min(8, 3 + Math.floor((n - 1) / 10) + (tier === 'dificil' ? 1 : tier === 'super' ? 2 : 0));
+  const mix = tier === 'normal' ? 2 : tier === 'dificil' ? 5 : 8;
+  return { tier, size, colors, mix };
+}
+
+// ===== Artes (regiões em coordenadas normalizadas; -1 = fora) =====
+const inCircle = (u, v, cx, cy, r) => (u - cx) * (u - cx) + (v - cy) * (v - cy) <= r * r;
+function polar(u, v, cx, cy) { const dx = u - cx, dy = v - cy; return { r: Math.hypot(dx, dy), a: Math.atan2(dy, dx) }; }
+
+const ART = [
+  { id: 'coracao', nome: 'Coração', shape(u, v) {
+    const x = (u - .5) * 2.6, y = (.55 - v) * 2.6;
+    const k = x * x + y * y - 1;
+    if (k * k * k - x * x * y * y * y > 0) return -1;
+    return v < .32 ? 0 : (u < .5 ? 1 : 2);
+  } },
+  { id: 'estrela', nome: 'Estrela', shape(u, v) {
+    const { r, a } = polar(u, v, .5, .54);
+    const t = ((a + Math.PI / 2) / (2 * Math.PI / 5) % 1 + 1) % 1, d = Math.abs(t - .5) * 2;
+    const R = .22 + .26 * (1 - d);
+    if (r > R) return -1;
+    return r < .14 ? 0 : (u < .5 ? 1 : 2);
+  } },
+  { id: 'flor', nome: 'Flor', shape(u, v) {
+    const { r, a } = polar(u, v, .5, .42);
+    if (r < .1) return 0;
+    if (r < .36 && r < .17 + .19 * Math.abs(Math.cos(a * 2.5))) return 1 + (Math.floor(((a + Math.PI) / (2 * Math.PI)) * 5) % 2);
+    if (Math.abs(u - .5) < .03 && v > .55 && v < .98) return 3;
+    if (v > .72 && v < .86 && inCircle(u, v, u < .5 ? .38 : .62, .79, .12)) return 3;
+    return -1;
+  } },
+  { id: 'peixe', nome: 'Peixe', shape(u, v) {
+    const body = ((u - .42) / .36) ** 2 + ((v - .5) / .24) ** 2 <= 1;
+    const tail = u > .72 && u < .98 && Math.abs(v - .5) < (u - .7) * .9;
+    if (inCircle(u, v, .26, .45, .04)) return 3;
+    if (tail) return 2;
+    if (!body) return -1;
+    return u < .3 ? 0 : (v < .5 ? 1 : 0);
+  } },
+  { id: 'casa', nome: 'Casa', shape(u, v) {
+    if (v >= .45 && v < .95 && u >= .15 && u < .85) {
+      if (u >= .42 && u < .58 && v >= .65) return 2;
+      if (u >= .22 && u < .36 && v >= .55 && v < .68) return 3;
+      return 0;
+    }
+    if (v >= .12 && v < .45 && Math.abs(u - .5) <= (v - .12) / .33 * .42) return 1;
+    return -1;
+  } },
+  { id: 'arvore', nome: 'Árvore', shape(u, v) {
+    if (u >= .43 && u < .57 && v >= .65 && v < .95) return 0;
+    if (inCircle(u, v, .5, .32, .28)) return 1;
+    if (inCircle(u, v, .3, .5, .2) || inCircle(u, v, .7, .5, .2)) return 2;
+    return -1;
+  } },
+  { id: 'cogumelo', nome: 'Cogumelo', shape(u, v) {
+    if (v < .55 && ((u - .5) / .42) ** 2 + ((v - .55) / .43) ** 2 <= 1) {
+      return (inCircle(u, v, .35, .35, .08) || inCircle(u, v, .62, .28, .07) || inCircle(u, v, .55, .45, .05)) ? 1 : 0;
+    }
+    if (u >= .38 && u < .62 && v >= .55 && v < .92) return 2;
+    return -1;
+  } },
+  { id: 'lua', nome: 'Lua', shape(u, v) {
+    if (!inCircle(u, v, .5, .5, .42) || inCircle(u, v, .68, .42, .34)) return -1;
+    return v < .35 ? 0 : (v < .65 ? 1 : 2);
+  } },
+];
+
+// ===== Imagem =====
+// Cada célula recebe um índice de cor 0..colors-1; fora do desenho = -1.
+function makeImage(n, rand) {
+  const { tier, size, colors } = levelParams(n);
+  const art = ART[(n - 1) % ART.length];
+  const w = size, h = size, reg = new Int16Array(w * h).fill(-1);
+  const ids = [];
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const r = art.shape((x + .5) / w, (y + .5) / h);
+    reg[y * w + x] = r;
+    if (r >= 0 && ids.indexOf(r) < 0) ids.push(r);
+  }
+  // Compacta ids de região para 0..k-1.
+  let k = ids.length;
+  for (let i = 0; i < reg.length; i++) if (reg[i] >= 0) reg[i] = ids.indexOf(reg[i]);
+  // Faltam regiões: divide a maior (faixas horizontais; anéis concêntricos no 'super').
+  while (k < colors) {
+    const cells = [], cnt = new Array(k).fill(0);
+    for (let i = 0; i < reg.length; i++) if (reg[i] >= 0) cnt[reg[i]]++;
+    let big = 0; for (let i = 1; i < k; i++) if (cnt[i] > cnt[big]) big = i;
+    for (let i = 0; i < reg.length; i++) if (reg[i] === big) cells.push(i);
+    let key;
+    if (tier === 'super') {
+      let cx = 0, cy = 0; for (const i of cells) { cx += i % w; cy += (i / w | 0); }
+      cx /= cells.length; cy /= cells.length;
+      key = i => -Math.hypot(i % w - cx, (i / w | 0) - cy);
+    } else key = i => (i / w | 0) * w + (i % w) * 1e-3;
+    cells.sort((a, b) => key(a) - key(b) || a - b);
+    for (let j = cells.length >> 1; j < cells.length; j++) reg[cells[j]] = k;
+    k++;
+  }
+  // Embaralha a ordem da paleta (Fisher-Yates) e mapeia regiões -> cores.
+  const perm = []; for (let i = 0; i < colors; i++) perm.push(i);
+  for (let i = colors - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); const t = perm[i]; perm[i] = perm[j]; perm[j] = t; }
+  const cellsOut = new Int8Array(w * h);
+  for (let i = 0; i < reg.length; i++) cellsOut[i] = reg[i] < 0 ? -1 : perm[reg[i] % colors];
+  return { w, h, cells: cellsOut };
+}
+
+return { COLS, VISIBLE_ROWS, BAR, POT_MIN, POT_MAX, MAX_LIVES, LIFE_MS, START_HELPS, HELP_EVERY, PREVIEW_UNTIL, PALETTE,
+  rng, seedFor, tierOf, levelParams, ART, makeImage };
+});
