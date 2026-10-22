@@ -5,7 +5,7 @@
 // ===== Constantes =====
 const COLS = 5, VISIBLE_ROWS = 5, BAR = 5, POT_MIN = 12, POT_MAX = 30, MAX_LIVES = 5;
 const LIFE_MS = 600000, START_HELPS = 2, HELP_EVERY = 50, PREVIEW_UNTIL = 50;
-const PALETTE = ['#ff5a5f', '#ffd23f', '#3ddc84', '#4ea8ff', '#c77dff', '#ff9f43', '#2ee6d6', '#ff7ac8'];
+const PALETTE = ['#ff1744', '#ffee00', '#39ff14', '#1f8bff', '#b026ff', '#ff7a00', '#00f0ff', '#ff2bd6'];
 
 // ===== Aleatório determinístico =====
 function rng(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
@@ -15,7 +15,7 @@ function seedFor(n) { let h = Math.imul(n | 0, 0x9E3779B1) ^ 0x5bd1e995; h = Mat
 function tierOf(n) { return n % 10 === 0 ? 'super' : n % 5 === 0 ? 'dificil' : 'normal'; }
 function levelParams(n) {
   const tier = tierOf(n);
-  const base = Math.min(32, 12 + Math.floor((n - 1) / 2));
+  const base = Math.min(32, 16 + Math.floor((n - 1) / 2));
   const size = tier === 'normal' ? base : Math.min(40, Math.round(base * (tier === 'dificil' ? 1.3 : 1.6)));
   const colors = Math.min(8, 3 + Math.floor((n - 1) / 8) + (tier === 'dificil' ? 1 : tier === 'super' ? 2 : 0));
   const mix = tier === 'normal' ? 4 : tier === 'dificil' ? 5 : 8;

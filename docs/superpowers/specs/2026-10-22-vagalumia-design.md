@@ -16,7 +16,7 @@ Jogo de quebra-cabeça para passar o tempo (sem guerra). Terceiro jogo do portal
 
 ## Níveis
 
-- **Normal:** a imagem começa em 12×12 e cresce 1 a cada 2 níveis, até 32×32. Começa com 3 cores e chega a 8.
+- **Normal:** a imagem começa em 16×16 e cresce 1 a cada 2 níveis, até 32×32. Começa com 3 cores e chega a 8.
 - **Final 5 (5, 15, 25…) = Difícil:** imagem ~30% maior de lado e +1 ou 2 cores; potes mais embaralhados. Aviso laranja.
 - **Final 0 (10, 20, 30…) = Super difícil:** imagem ~60% maior (até 40×40) e +2 ou 3 cores; cores mais presas no meio. Aviso vermelho.
 - Os quadradinhos diminuem para caber na tela, porque ninguém clica na imagem.

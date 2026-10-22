@@ -11,10 +11,10 @@ test('tiers by last digit', () => {
   assert.deepEqual([1, 5, 10, 15, 20, 23].map(T.tierOf), ['normal', 'dificil', 'super', 'dificil', 'super', 'normal']);
 });
 test('level size and colors follow the spec', () => {
-  assert.equal(T.levelParams(1).size, 12);
-  assert.equal(T.levelParams(14).size, 18);
-  assert.equal(T.levelParams(15).size, Math.round(19 * 1.3));
-  assert.equal(T.levelParams(20).size, Math.round(21 * 1.6));
+  assert.equal(T.levelParams(1).size, 16);
+  assert.equal(T.levelParams(14).size, 22);
+  assert.equal(T.levelParams(15).size, Math.round(23 * 1.3));
+  assert.equal(T.levelParams(20).size, Math.round(25 * 1.6));
   assert.equal(T.levelParams(199).size, 32);
   assert.equal(T.levelParams(210).size, 40);
   assert.deepEqual([1, 5, 10, 11, 100].map(n => T.levelParams(n).colors), [3, 4, 6, 4, 8]);

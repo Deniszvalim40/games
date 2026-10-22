@@ -317,8 +317,9 @@ function drawPot(x,y,w,h,color,count,alpha,ring){
   g.addColorStop(0,col);g.addColorStop(.55,col+'99');g.addColorStop(1,col+'00');
   c.fillStyle=g;rr(c,x+3,y+4,w-6,h-6,w*.2);c.fill();
   const gl=c.createLinearGradient(0,y,0,y+h);gl.addColorStop(0,'rgba(255,255,255,.22)');gl.addColorStop(1,'rgba(255,255,255,.05)');
-  c.fillStyle=gl;c.strokeStyle='rgba(255,255,255,.4)';c.lineWidth=2;
-  rr(c,x,y,w,h,w*.22);c.fill();c.stroke();
+  c.fillStyle=gl;rr(c,x,y,w,h,w*.22);c.fill();
+  // contorno neon na cor do pote
+  c.strokeStyle=col;c.lineWidth=2.5;c.shadowColor=col;c.shadowBlur=w*.35;c.stroke();c.shadowBlur=0;
   c.fillStyle='rgba(255,255,255,.28)';rr(c,x+w*.16,y+h*.14,w*.1,h*.5,w*.05);c.fill();
   c.fillStyle='#a07850';rr(c,x+w*.18,y-lidH,w*.64,lidH,lidH*.4);c.fill();
   c.fillStyle='#7a5a38';c.fillRect(x+w*.18,y-lidH*.25,w*.64,lidH*.25);

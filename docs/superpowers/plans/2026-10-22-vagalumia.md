@@ -19,7 +19,7 @@
 - Nível: final 0 = `'super'`, final 5 = `'dificil'`, o resto = `'normal'`.
 - Exposto = vizinho em cima, embaixo, à esquerda ou à direita que está fora da grade, vazio (-1) ou aceso. **Diagonal não conta.**
 - IDs das ajudas: `'slot'` (+1 vaga), `'shuffle'` (Embaralhar), `'any'` (Qualquer pote).
-- Paleta fixa (índice → cor): `['#ff5a5f','#ffd23f','#3ddc84','#4ea8ff','#c77dff','#ff9f43','#2ee6d6','#ff7ac8']`.
+- Paleta fixa (índice → cor): `['#ff1744','#ffee00','#39ff14','#1f8bff','#b026ff','#ff7a00','#00f0ff','#ff2bd6']` (neon).
 - Todo acesso a `localStorage` fica dentro de `try/catch`, com a chave `'vagalumia-save-v1'`. O jogo funciona sem ele.
 - Os comandos rodam a partir de `D:\DEV\ATARI\games`. O trabalho fica no branch `vagalumia`, criado a partir do branch atual `trincheira`, que já tem o commit do spec.
 
@@ -80,10 +80,10 @@ test('tiers by last digit', () => {
 });
 test('level size and colors follow the spec', () => {
   // normal: 12 + floor((n-1)/2), máx 32; difícil: round(base*1.3); super: round(base*1.6); ambos máx 40
-  assert.equal(T.levelParams(1).size, 12);
-  assert.equal(T.levelParams(14).size, 18);
-  assert.equal(T.levelParams(15).size, Math.round(19 * 1.3));
-  assert.equal(T.levelParams(20).size, Math.round(21 * 1.6));
+  assert.equal(T.levelParams(1).size, 16);
+  assert.equal(T.levelParams(14).size, 22);
+  assert.equal(T.levelParams(15).size, Math.round(23 * 1.3));
+  assert.equal(T.levelParams(20).size, Math.round(25 * 1.6));
   assert.equal(T.levelParams(200).size, 32);
   assert.equal(T.levelParams(210).size, 40);
   // cores: normal min(8, 3 + floor((n-1)/8)); difícil +1; super +2; máx 8
