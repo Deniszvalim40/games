@@ -123,6 +123,76 @@ function makeImage(n, rand) {
   return { w, h, cells: cellsOut };
 }
 
+// ===== Regras da fase =====
+// Estado: { n, tier, w, h, cells, lit, cols, bar, cap, extra, anyPick, over }
+function fromGrid(rows, cols) {
+  const h = rows.length, w = rows[0].length, cells = new Int8Array(w * h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const c = rows[y][x]; cells[y * w + x] = c === '.' ? -1 : +c; }
+  const cs = [];
+  for (let i = 0; i < COLS; i++) cs.push((cols[i] || []).map(p => ({ color: p[0], count: p[1] })));
+  return { n: 1, tier: 'normal', w, h, cells, lit: new Uint8Array(w * h), cols: cs,
+    bar: new Array(BAR).fill(null), cap: BAR, extra: false, anyPick: false, over: null };
+}
+// Exposto: pintado, apagado e com algum vizinho ortogonal aceso, vazio ou fora da borda.
+function isExposed(s, i) {
+  if (s.cells[i] < 0 || s.lit[i]) return false;
+  const w = s.w, h = s.h, x = i % w, y = (i / w) | 0;
+  const open = j => s.cells[j] < 0 || s.lit[j] === 1;
+  return x === 0 || y === 0 || x === w - 1 || y === h - 1 || open(i - 1) || open(i + 1) || open(i - w) || open(i + w);
+}
+function exposedOf(s, color) {
+  const out = [];
+  for (let i = 0; i < s.cells.length; i++) if (s.cells[i] === color && isExposed(s, i)) out.push(i);
+  return out;
+}
+function target(s, color) {
+  const w = s.w, mid = (w - 1) / 2;
+  let best = -1, by = -1, bd = 0, bx = 0;
+  for (let i = 0; i < s.cells.length; i++) {
+    if (s.cells[i] !== color || !isExposed(s, i)) continue;
+    const x = i % w, y = (i / w) | 0, d = Math.abs(x - mid);
+    if (best < 0 || y > by || (y === by && (d < bd || (d === bd && x < bx)))) { best = i; by = y; bd = d; bx = x; }
+  }
+  return best;
+}
+function pick(s, col, depth) {
+  depth = depth || 0;
+  if (s.over) return false;
+  const c = s.cols[col];
+  if (!c || depth >= c.length) return false;
+  if (depth > 0 && !s.anyPick) return false;
+  const slot = s.bar.indexOf(null);
+  if (slot < 0 || slot >= s.cap) return false;
+  const pot = c.splice(depth, 1)[0];
+  if (depth > 0) s.anyPick = false;
+  s.bar[slot] = { color: pot.color, left: pot.count };
+  return true;
+}
+function advance(s) {
+  const ev = [];
+  for (let slot = 0; slot < s.bar.length; slot++) {
+    const p = s.bar[slot];
+    if (!p) continue;
+    const cell = target(s, p.color);
+    if (cell < 0) continue;
+    s.lit[cell] = 1; p.left--;
+    ev.push({ slot, color: p.color, cell });
+    if (p.left <= 0) s.bar[slot] = null;
+  }
+  s.over = status(s);
+  return ev;
+}
+function status(s) {
+  let won = true;
+  for (let i = 0; i < s.cells.length; i++) if (s.cells[i] >= 0 && !s.lit[i]) { won = false; break; }
+  if (won) return 'won';
+  const used = s.bar.slice(0, s.cap);
+  if (used.indexOf(null) >= 0) return null;
+  for (const p of used) if (p && target(s, p.color) !== -1) return null;
+  return 'lost';
+}
+
 return { COLS, VISIBLE_ROWS, BAR, POT_MIN, POT_MAX, MAX_LIVES, LIFE_MS, START_HELPS, HELP_EVERY, PREVIEW_UNTIL, PALETTE,
-  rng, seedFor, tierOf, levelParams, ART, makeImage };
+  rng, seedFor, tierOf, levelParams, ART, makeImage,
+  fromGrid, isExposed, exposedOf, target, pick, advance, status };
 });
