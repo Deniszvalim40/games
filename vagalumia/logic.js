@@ -157,7 +157,7 @@ function target(s, color) {
 }
 function pick(s, col, depth) {
   depth = depth || 0;
-  if (s.over) return false;
+  if (s.over || depth < 0) return false;
   const c = s.cols[col];
   if (!c || depth >= c.length) return false;
   if (depth > 0 && !s.anyPick) return false;
@@ -194,23 +194,33 @@ function status(s) {
 
 // ===== Geração da fase =====
 function copyState(s) {
-  return Object.assign({}, s, { cells: s.cells.slice(), lit: s.lit.slice(), cols: structuredClone(s.cols), bar: structuredClone(s.bar) });
+  return Object.assign({}, s, { cells: s.cells.slice(), lit: s.lit.slice(), cols: s.cols && s.cols.map(col => col.map(p => ({ color: p.color, count: p.count }))), bar: s.bar.map(p => p && { color: p.color, left: p.left }) });
 }
-// Simula numa cópia a ordem de acender: cada pote acende até k quadradinhos de uma cor exposta.
+// Simula numa cópia a ordem de acender. Cada pote recebe uma cota de 12 a 30; o resto da cor
+// nunca fica abaixo de 12 (cor com menos de 12 vira um pote só). Se a cor trava no meio, o pote
+// fica aberto e continua quando a cor voltar a ter exposto (o resto se junta ao mesmo pote).
 function peel(s, rand) {
   const c = copyState(s), seq = [];
   let colors = 0; for (let i = 0; i < c.cells.length; i++) if (c.cells[i] >= colors) colors = c.cells[i] + 1;
+  const free = new Array(colors).fill(0), open = new Array(colors).fill(null);
+  for (let i = 0; i < c.cells.length; i++) if (c.cells[i] >= 0) free[c.cells[i]]++;
   for (;;) {
     const ready = [];
     for (let col = 0; col < colors; col++) if (target(c, col) >= 0) ready.push(col);
     if (!ready.length) break;
     const color = ready[Math.floor(rand() * ready.length)];
-    const k = POT_MIN + Math.floor(rand() * (POT_MAX - POT_MIN + 1));
-    let count = 0;
-    while (count < k) { const i = target(c, color); if (i < 0) break; c.lit[i] = 1; count++; }
-    seq.push({ color, count });
+    let pot = open[color];
+    if (!pot) {
+      let k = POT_MIN + Math.floor(rand() * (POT_MAX - POT_MIN + 1));
+      if (free[color] <= POT_MAX) k = free[color];
+      else if (free[color] - k < POT_MIN) k = free[color] - POT_MIN;
+      free[color] -= k;
+      pot = { color, count: 0, need: k }; seq.push(pot);
+    }
+    while (pot.count < pot.need) { const i = target(c, color); if (i < 0) break; c.lit[i] = 1; pot.count++; }
+    open[color] = pot.count < pot.need ? pot : null;
   }
-  return seq;
+  return seq.map(p => ({ color: p.color, count: p.count }));
 }
 // O pote i vai para a coluna i % 5.
 function deal(seq) {

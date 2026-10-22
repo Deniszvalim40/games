@@ -79,6 +79,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 #top{display:flex;justify-content:space-between;align-items:center;padding:12px 16px 4px;font-size:14px}
 #top .lv{font-weight:700;opacity:.9}
 #top b{font-size:15px;letter-spacing:1px;color:var(--gold);text-shadow:0 0 10px #ffd84a}
+#top .tr{display:flex;gap:8px;align-items:center}
+#top .gear{width:32px;height:32px;font-size:15px}
 #tag{border-radius:10px;padding:2px 8px;font-size:11px;font-weight:700;color:#fff;visibility:hidden}
 #tag.dificil{background:#e8590c;visibility:visible}#tag.super{background:#d6334a;visibility:visible}
 #stage{position:relative;flex:1;min-height:0}
@@ -104,7 +106,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 #game.end .dim{animation:dim2 .5s forwards}
 #game.end #rib{animation:in .6s cubic-bezier(.2,1.4,.4,1) forwards,aura 1.2s .6s ease-in-out infinite}
 #game.end #sub{animation:sub2 .5s .8s forwards}
-#game.end #cont{animation:sub2 .4s 1.6s forwards;pointer-events:auto}
+#game.end #cont{animation:sub2 .4s 1.6s forwards}
+#game.end.ready #cont{pointer-events:auto}
 @keyframes in{to{transform:translateX(0)}}
 @keyframes out{from{transform:translateX(0)}to{transform:translateX(130vw)}}
 /* o vaga-lume fica amarelo; só a aura em volta pulsa (e muda de cor no difícil/super) */
@@ -125,6 +128,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .btn{flex:1;padding:12px 8px;border-radius:12px;border:1px solid #ffffff30;background:#ffffff14;font-weight:800;font-size:16px}
 .btn.pri{background:var(--yel);color:#2a1d00;border:0}
 .btn:disabled{opacity:.4;cursor:default}
+.box .tgs{display:flex;gap:10px;justify-content:center}
 @media (prefers-reduced-motion:reduce){#game.intro #rib,#game.end #rib{animation-duration:.01s,1.2s,.01s}}
 </style>
 </head>
@@ -154,7 +158,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 </section>
 
 <section id="game" class="screen">
-  <div id="top"><span class="lv" id="g-level">Nível 1</span><b>Vagalumia</b><span id="tag"></span></div>
+  <div id="top"><span class="lv" id="g-level">Nível 1</span><b>VAGALUMIA</b><span class="tr"><span id="tag"></span><button class="gear" id="g-menu" aria-label="Menu">☰</button></span></div>
   <div id="stage"><canvas id="cv"></canvas></div>
   <div id="helps">
     <button class="hb" id="h-slot"><span>➕</span><small>+1 vaga</small><em>0</em></button>
@@ -167,6 +171,15 @@ button{font:inherit;color:inherit;cursor:pointer}
   <div class="dlg" id="offer"><div class="box">
     <h2>Barra cheia!</h2><p>Usar +1 vaga?</p>
     <div class="row"><button class="btn" id="o-no">Desistir</button><button class="btn pri" id="o-yes">Usar</button></div>
+  </div></div>
+  <div class="dlg" id="gmenu"><div class="box">
+    <h2>Pausa</h2>
+    <div class="tgs"><button class="tg" id="g-som" aria-pressed="true">🔔 Som</button><button class="tg" id="g-mus" aria-pressed="true">🦗 Música</button></div>
+    <div class="row"><button class="btn" id="g-quit">Sair</button><button class="btn pri" id="g-back">Continuar</button></div>
+  </div></div>
+  <div class="dlg" id="quit"><div class="box">
+    <h2>Sair da fase?</h2><p>Sair agora perde 1 vida. Sair?</p>
+    <div class="row"><button class="btn" id="q-yes">Sim</button><button class="btn pri" id="q-no">Não</button></div>
   </div></div>
   <div class="dlg" id="lost"><div class="box">
     <h2>Você perdeu</h2><p id="l-info"></p>
@@ -374,14 +387,14 @@ $('t-mus').onclick=()=>{save.musica=!save.musica;saveGame();initAudio();syncMusi
 // ----- Fase -----
 const game=$('game'),stage=$('stage'),cv=$('cv'),ctx=cv.getContext('2d');
 let s=null,phase='off',introTimer=0,acc=0,endAt=0;
-let flies=[],pending=new Set(),flashes=[],previewCells=[],hold=null;
+let flies=[],pending=new Set(),flashes=[],previewCells=[],hold=null,picked=false,menuOpen=false;
 let L={},dpr=1,layer=null,lctx=null;
 
 function startLevel(n){
   if(!V.canPlay(save,Date.now())){showHome();return}
   leaveGame();
   s=V.createLevel(n);
-  flies=[];pending=new Set();flashes=[];previewCells=[];hold=null;acc=0;
+  flies=[];pending=new Set();flashes=[];previewCells=[];hold=null;picked=false;acc=0;
   show('game');
   $('g-level').textContent='Nível '+n;
   const tag=$('tag');tag.className=s.tier==='normal'?'':s.tier;
@@ -392,8 +405,8 @@ function startLevel(n){
   introTimer=setTimeout(()=>{if(phase==='intro')phase='play';ribbonHide();updateHelps()},INTRO_MS+450);
 }
 function leaveGame(){
-  clearTimeout(introTimer);phase='off';
-  game.classList.remove('intro','end');$('rw').classList.remove('on');
+  clearTimeout(introTimer);phase='off';closeGMenu();
+  game.classList.remove('intro','end','ready');$('rw').classList.remove('on');
   $('fx').innerHTML='';$('offer').classList.remove('show');$('lost').classList.remove('show');
 }
 
@@ -417,7 +430,7 @@ function layout(){
   L={W,H,cw,x0,colP,potW,potH:d.ph,lid:d.lid,rowP:d.rowP,barH:d.barH,
      cs,gap:cs>=7?Math.max(1,Math.round(cs*.14)):cs>=4?1:0,ix:(W-iw)/2,iy:imgTop+(imgH-ih)/2,iw,ih,
      barY,slotP,slotX0:W/2-slotP*s.cap/2,potsY:barY+d.barH+12};
-  buildLayer();
+  potCache.clear();buildLayer();
 }
 addEventListener('resize',()=>{if(s&&screenId==='game')layout()});
 
@@ -472,24 +485,44 @@ function updateFlies(now){
 }
 
 // ---------- desenho ----------
-function drawPot(x,y,w,h,color,count,alpha,ring){
-  const c=ctx,col=V.PALETTE[color],lidH=w*.12;
-  c.save();c.globalAlpha=alpha;
+// Pote pré-desenhado em canvas offscreen (corpo por cor/alpha/anel/tamanho; número à parte).
+const potCache=new Map();
+function potSprite(w,h,color,alpha,ring,glowOn){
+  const key='b'+color+'|'+alpha+'|'+(ring?1:0)+'|'+(glowOn?1:0)+'|'+w.toFixed(2)+'|'+h.toFixed(2);
+  let sp=potCache.get(key);if(sp)return sp;
+  const lidH=w*.12,pad=Math.ceil(w*.45)+4,cvs=document.createElement('canvas');
+  cvs.width=Math.ceil((w+2*pad)*dpr);cvs.height=Math.ceil((h+lidH+2*pad)*dpr);
+  const c=cvs.getContext('2d'),col=V.PALETTE[color],x=pad,y=pad+lidH;
+  c.setTransform(dpr,0,0,dpr,0,0);c.globalAlpha=alpha;
   const g=c.createRadialGradient(x+w/2,y+h*.55,0,x+w/2,y+h*.55,w*.62);
   g.addColorStop(0,col);g.addColorStop(.55,col+'99');g.addColorStop(1,col+'00');
   c.fillStyle=g;rr(c,x+3,y+4,w-6,h-6,w*.2);c.fill();
   const gl=c.createLinearGradient(0,y,0,y+h);gl.addColorStop(0,'rgba(255,255,255,.22)');gl.addColorStop(1,'rgba(255,255,255,.05)');
   c.fillStyle=gl;rr(c,x,y,w,h,w*.22);c.fill();
-  // contorno neon na cor do pote
-  c.strokeStyle=col;c.lineWidth=2.5;c.shadowColor=col;c.shadowBlur=w*.35;c.stroke();c.shadowBlur=0;
+  // contorno neon na cor do pote (brilho só na frente)
+  c.strokeStyle=col;c.lineWidth=2.5;if(glowOn){c.shadowColor=col;c.shadowBlur=w*.35}c.stroke();c.shadowBlur=0;
   c.fillStyle='rgba(255,255,255,.28)';rr(c,x+w*.16,y+h*.14,w*.1,h*.5,w*.05);c.fill();
   c.fillStyle='#a07850';rr(c,x+w*.18,y-lidH,w*.64,lidH,lidH*.4);c.fill();
   c.fillStyle='#7a5a38';c.fillRect(x+w*.18,y-lidH*.25,w*.64,lidH*.25);
   if(ring){c.strokeStyle='rgba(255,233,138,.55)';c.lineWidth=2;rr(c,x-3,y-lidH-3,w+6,h+lidH+6,w*.26);c.stroke()}
-  c.fillStyle='#fff';c.font='700 '+Math.round(w*.3)+'px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+  sp={cvs,ox:pad,oy:pad+lidH,w:cvs.width/dpr,h:cvs.height/dpr};potCache.set(key,sp);return sp;
+}
+function numSprite(w,count){
+  const key='n'+count+'|'+w.toFixed(2);
+  let sp=potCache.get(key);if(sp)return sp;
+  const fs=Math.round(w*.3),bw=w+12,bh=fs*1.6+12,cvs=document.createElement('canvas');
+  cvs.width=Math.ceil(bw*dpr);cvs.height=Math.ceil(bh*dpr);
+  const c=cvs.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);
+  c.fillStyle='#fff';c.font='700 '+fs+'px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
   c.textAlign='center';c.textBaseline='middle';c.shadowColor='#000';c.shadowBlur=4;
-  c.fillText(String(count),x+w/2,y+h*.55);
-  c.restore();
+  c.fillText(String(count),bw/2,bh/2);
+  sp={cvs,w:cvs.width/dpr,h:cvs.height/dpr};potCache.set(key,sp);return sp;
+}
+function drawPot(x,y,w,h,color,count,alpha,ring,glowOn){
+  if(potCache.size>600)potCache.clear();
+  const b=potSprite(w,h,color,alpha,ring,glowOn!==false),n=numSprite(w,count),c=ctx;
+  c.drawImage(b.cvs,x-b.ox,y-b.oy,b.w,b.h);
+  c.save();c.globalAlpha=alpha;c.drawImage(n.cvs,x+w/2-n.w/2,y+h*.55-n.h/2,n.w,n.h);c.restore();
 }
 function draw(now){
   const c=ctx;c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,L.W,L.H);
@@ -508,7 +541,8 @@ function draw(now){
     const p=cellXY(i);c.globalAlpha=.33;c.fillStyle=V.PALETTE[s.cells[i]];rr(c,p.x+g/2,p.y+g/2,sz,sz,rad);c.fill();
     c.globalAlpha=1;if(L.cs>=5)c.stroke();
   }
-  // prévia
+  // prévia (recalcula enquanto o dedo segura)
+  if(hold&&hold.shown&&hold.inside){const hp=s.cols[hold.col][hold.row];previewCells=hp?V.preview(s,hp.color):[]}
   if(previewCells.length){
     const pa=.55+.45*Math.sin(now/120);c.strokeStyle='#fff';c.lineWidth=Math.max(1.5,L.cs*.16);
     for(const i of previewCells){const p=cellXY(i);c.globalAlpha=.75;c.fillStyle=V.PALETTE[s.cells[i]];rr(c,p.x+g/2,p.y+g/2,sz,sz,rad);c.fill();c.globalAlpha=pa;c.stroke()}
@@ -532,7 +566,7 @@ function draw(now){
     const R=potRect(col,r),held=hold&&hold.col===col&&hold.row===r&&hold.inside;
     const alpha=r===0?1:s.anyPick?.8:.4;
     let y=R.y;if(held)y+=2;
-    drawPot(R.x,y,R.w,R.h,p.color,p.count,alpha,r===0||s.anyPick);
+    drawPot(R.x,y,R.w,R.h,p.color,p.count,alpha,r===0||s.anyPick,r===0);
   }
   // vaga-lumes em voo
   for(const f of flies){
@@ -554,12 +588,12 @@ function hitPot(x,y){
 }
 function local(e){const b=cv.getBoundingClientRect();return[e.clientX-b.left,e.clientY-b.top]}
 cv.addEventListener('pointerdown',e=>{
-  if(phase!=='play'||hold)return;
+  if(phase!=='play'||hold||menuOpen)return;
   const[x,y]=local(e),h=hitPot(x,y);if(!h)return;
   try{cv.setPointerCapture(e.pointerId)}catch(_){}
   hold={...h,id:e.pointerId,inside:true,timer:setTimeout(()=>{
     if(!hold||!hold.inside||!s)return;const p=s.cols[hold.col][hold.row];
-    if(p)previewCells=V.preview(s,p.color);
+    if(p){previewCells=V.preview(s,p.color);hold.shown=s.n<=V.PREVIEW_UNTIL}
   },HOLD_MS)};
 });
 cv.addEventListener('pointermove',e=>{
@@ -570,8 +604,9 @@ cv.addEventListener('pointermove',e=>{
 function endHold(e,cancel){
   if(!hold||e.pointerId!==hold.id)return;
   const h=hold;hold=null;clearTimeout(h.timer);previewCells=[];
-  if(cancel||!h.inside||phase!=='play')return;
-  if(V.pick(s,h.col,h.row))popPot();else beep(170,.12,.03);
+  // depois de ver a prévia, soltar só apaga a prévia (não pega o pote)
+  if(cancel||!h.inside||h.shown||phase!=='play'||menuOpen)return;
+  if(V.pick(s,h.col,h.row)){picked=true;popPot()}else beep(170,.12,.03);
   updateHelps();
 }
 cv.addEventListener('pointerup',e=>endHold(e,false));
@@ -587,7 +622,7 @@ function updateHelps(){
   if(s&&s.anyPick)$('h-any').disabled=true;
 }
 function useHelp(id,fn){
-  if(phase!=='play'||!(save.helps[id]>0))return false;
+  if(phase!=='play'||menuOpen||!(save.helps[id]>0))return false;
   // fase já decidida (vaga-lumes ainda voando): só +1 vaga salva uma derrota
   if(s.over&&!(id==='slot'&&s.over==='lost'))return false;
   if(!fn())return false;
@@ -599,7 +634,7 @@ $('h-any').onclick=()=>useHelp('any',()=>V.setAnyPick(s));
 
 // ---------- derrota ----------
 function onLost(){
-  phase='lost';updateHelps();
+  closeGMenu();phase='lost';updateHelps();
   if(save.helps.slot>0&&!s.extra)$('offer').classList.add('show');
   else giveUp();
 }
@@ -638,14 +673,17 @@ function ribbonStart(mode,n){
   }else{
     sub.textContent='Nível '+n+' completo! ✨';sub.style.color='#9dffb8';
   }
-  game.classList.remove('intro','end');$('rw').classList.add('on');void game.offsetWidth;
+  game.classList.remove('intro','end','ready');$('rw').classList.add('on');void game.offsetWidth;
   game.classList.add(mode);
 }
 function ribbonHide(){if(game.classList.contains('intro')){game.classList.remove('intro');$('rw').classList.remove('on')}}
 
 // ---------- fim ----------
 function startEnd(){
-  phase='end';endAt=performance.now();updateHelps();
+  closeGMenu();phase='end';endAt=performance.now();updateHelps();
+  // grava a vitória na hora (winLevel ignora se o nível já foi contado)
+  V.winLevel(save,s.n);saveGame();
+  setTimeout(()=>{if(phase==='end')game.classList.add('ready')},1600);
   [523,659,784,1047,1319].forEach((f,i)=>setTimeout(()=>{if(AC&&save.som)marimba(AC.currentTime,f,.07,master)},i*120));
   ribbonStart('end',s.n);
   const fx=$('fx');fx.innerHTML='';
@@ -658,7 +696,23 @@ function startEnd(){
     f.style.animationDelay=(.5+Math.random()*2.4)+'s';fx.appendChild(f);
   }
 }
-$('cont').onclick=()=>{if(phase!=='end')return;V.winLevel(save,s.n);saveGame();showHome(true)};
+$('cont').onclick=()=>{if(phase!=='end')return;showHome(true)};
+
+// ---------- menu da fase ----------
+function renderGMenu(){$('g-som').setAttribute('aria-pressed',String(save.som));$('g-mus').setAttribute('aria-pressed',String(save.musica))}
+function closeGMenu(){menuOpen=false;$('gmenu').classList.remove('show');$('quit').classList.remove('show')}
+$('g-menu').onclick=()=>{
+  if(phase!=='play'&&phase!=='intro')return;
+  if(hold){clearTimeout(hold.timer);hold=null}previewCells=[];
+  menuOpen=true;renderGMenu();$('gmenu').classList.add('show');
+};
+$('g-som').onclick=()=>{save.som=!save.som;saveGame();renderGMenu()};
+$('g-mus').onclick=()=>{save.musica=!save.musica;saveGame();initAudio();syncMusic();renderGMenu()};
+$('g-back').onclick=closeGMenu;
+// sem pote pego, sai de graça; com pote pego, sair custa 1 vida
+$('g-quit').onclick=()=>{if(!picked)showHome();else $('quit').classList.add('show')};
+$('q-no').onclick=()=>$('quit').classList.remove('show');
+$('q-yes').onclick=()=>{V.loseLife(save,Date.now());saveGame();showHome()};
 
 // ---------- loop ----------
 let last=performance.now();
@@ -680,8 +734,8 @@ function frame(now){
 }
 requestAnimationFrame(frame);
 
-// Atalho para depuração no console (ex.: vg.save.level=51; vg.saveGame(); vg.showHome()).
-window.vg={get s(){return s},get save(){return save},get preview(){return previewCells},saveGame,startLevel,showHome};
+// Atalho de depuração, só com ?debug na URL (ex.: vg.save.level=51; vg.saveGame(); vg.showHome()).
+try{if(new URLSearchParams(location.search).has('debug'))window.vg={get s(){return s},get save(){return save},get preview(){return previewCells},saveGame,startLevel,showHome}}catch(e){}
 showHome();
 if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>

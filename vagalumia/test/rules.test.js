@@ -61,3 +61,9 @@ test('pick refused after game over', () => {
   s.over = 'won';
   assert.equal(T.pick(s, 0), false);
 });
+test('pick with a negative depth is refused', () => {
+  const s = grid(['00'], [[[0, 1], [0, 1]]]);
+  s.anyPick = true;
+  assert.equal(T.pick(s, 0, -1), false);
+  assert.equal(s.cols[0].length, 2);
+});

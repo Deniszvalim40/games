@@ -29,3 +29,13 @@ test('fresh level starts with empty bar, nothing lit, cap 5', () => {
   const s = T.createLevel(3);
   assert.equal(s.cap, 5); assert.ok(s.bar.every(b => b === null)); assert.ok(s.lit.every(v => v === 0));
 });
+test('levels 1..120: every pot has 12..30 fireflies (fewer only if the colour has < 12 cells)', () => {
+  for (let n = 1; n <= 120; n++) {
+    const s = T.createLevel(n), tot = {};
+    s.cells.forEach(c => { if (c >= 0) tot[c] = (tot[c] || 0) + 1; });
+    for (const p of s.cols.flat()) {
+      assert.ok(p.count <= T.POT_MAX, 'nível ' + n + ': ' + p.count);
+      assert.ok(p.count >= T.POT_MIN || tot[p.color] < T.POT_MIN, 'nível ' + n + ': ' + p.count);
+    }
+  }
+});
