@@ -256,8 +256,32 @@ function createLevel(n) {
   return base;
 }
 
+// ===== Ajudas =====
+function addSlot(s) {
+  if (s.extra) return false;
+  s.bar.push(null); s.cap = BAR + 1; s.extra = true;
+  if (s.over === 'lost') s.over = null;
+  return true;
+}
+function shuffle(s, rand) {
+  const pots = [];
+  for (const col of s.cols) for (const p of col) pots.push({ color: p.color, count: p.count });
+  for (let t = 0; t < 30; t++) {
+    for (let i = pots.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); const x = pots[i]; pots[i] = pots[j]; pots[j] = x; }
+    const cols = deal(pots);
+    if (solve(Object.assign({}, s, { cols }))) { s.cols = cols; return true; }
+  }
+  return false;
+}
+function setAnyPick(s) {
+  if (s.anyPick) return false;
+  s.anyPick = true; return true;
+}
+function preview(s, color) { return s.n <= PREVIEW_UNTIL ? exposedOf(s, color) : []; }
+
 return { COLS, VISIBLE_ROWS, BAR, POT_MIN, POT_MAX, MAX_LIVES, LIFE_MS, START_HELPS, HELP_EVERY, PREVIEW_UNTIL, PALETTE,
   rng, seedFor, tierOf, levelParams, ART, makeImage,
   fromGrid, isExposed, exposedOf, target, pick, advance, status,
-  peel, deal, solve, createLevel };
+  peel, deal, solve, createLevel,
+  addSlot, shuffle, setAnyPick, preview };
 });
