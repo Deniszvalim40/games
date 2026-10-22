@@ -279,9 +279,57 @@ function setAnyPick(s) {
 }
 function preview(s, color) { return s.n <= PREVIEW_UNTIL ? exposedOf(s, color) : []; }
 
+// ===== Save =====
+function newSave() {
+  return { v: 1, level: 1, lives: MAX_LIVES, lifeAt: 0,
+    helps: { slot: START_HELPS, shuffle: START_HELPS, any: START_HELPS }, som: true, musica: true };
+}
+function parseSave(text) {
+  const out = newSave();
+  let o;
+  try { o = JSON.parse(text); } catch (e) { return out; }
+  if (!o || typeof o !== 'object' || Array.isArray(o) || o.v !== 1) return out;
+  const isInt = (x) => typeof x === 'number' && Number.isInteger(x);
+  if (isInt(o.level) && o.level > 0) out.level = o.level;
+  if (isInt(o.lives) && o.lives >= 0 && o.lives <= MAX_LIVES) out.lives = o.lives;
+  if (typeof o.lifeAt === 'number' && Number.isFinite(o.lifeAt)) out.lifeAt = o.lifeAt;
+  if (o.helps && typeof o.helps === 'object') {
+    for (const k of ['slot', 'shuffle', 'any']) if (isInt(o.helps[k]) && o.helps[k] >= 0) out.helps[k] = o.helps[k];
+  }
+  if (typeof o.som === 'boolean') out.som = o.som;
+  if (typeof o.musica === 'boolean') out.musica = o.musica;
+  return out;
+}
+function livesNow(save, now) {
+  if (now < save.lifeAt) save.lifeAt = now;
+  if (save.lives >= MAX_LIVES) return { lives: save.lives, nextMs: 0 };
+  const steps = Math.floor((now - save.lifeAt) / LIFE_MS);
+  if (steps > 0) {
+    save.lives = Math.min(MAX_LIVES, save.lives + steps);
+    save.lifeAt += steps * LIFE_MS;
+  }
+  if (save.lives >= MAX_LIVES) return { lives: save.lives, nextMs: 0 };
+  return { lives: save.lives, nextMs: LIFE_MS - (now - save.lifeAt) };
+}
+function loseLife(save, now) {
+  const before = livesNow(save, now).lives;
+  if (before >= MAX_LIVES) save.lifeAt = now;
+  save.lives = Math.max(0, save.lives - 1);
+}
+function canPlay(save, now) { return livesNow(save, now).lives > 0; }
+function winLevel(save, n) {
+  if (n === save.level) save.level++;
+  if (n % HELP_EVERY === 0) for (const k of ['slot', 'shuffle', 'any']) save.helps[k]++;
+}
+function spendHelp(save, id) {
+  if (!save.helps || !(save.helps[id] > 0)) return false;
+  save.helps[id]--; return true;
+}
+
 return { COLS, VISIBLE_ROWS, BAR, POT_MIN, POT_MAX, MAX_LIVES, LIFE_MS, START_HELPS, HELP_EVERY, PREVIEW_UNTIL, PALETTE,
   rng, seedFor, tierOf, levelParams, ART, makeImage,
   fromGrid, isExposed, exposedOf, target, pick, advance, status,
   peel, deal, solve, createLevel,
-  addSlot, shuffle, setAnyPick, preview };
+  addSlot, shuffle, setAnyPick, preview,
+  newSave, parseSave, livesNow, loseLife, canPlay, winLevel, spendHelp };
 });
