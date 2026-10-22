@@ -6,6 +6,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#070b16">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>Vagalumia</title>
 <style>
 :root{--bg:#070b16;--fg:#e8eefc;--gold:#ffe98a;--yel:#ffd23f}
@@ -681,6 +683,7 @@ requestAnimationFrame(frame);
 // Atalho para depuração no console (ex.: vg.save.level=51; vg.saveGame(); vg.showHome()).
 window.vg={get s(){return s},get save(){return save},get preview(){return previewCells},saveGame,startLevel,showHome};
 showHome();
+if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
 </html>
