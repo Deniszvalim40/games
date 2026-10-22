@@ -17,8 +17,8 @@ test('level size and colors follow the spec', () => {
   assert.equal(T.levelParams(20).size, Math.round(21 * 1.6));
   assert.equal(T.levelParams(199).size, 32);
   assert.equal(T.levelParams(210).size, 40);
-  assert.deepEqual([1, 5, 10, 11, 100].map(n => T.levelParams(n).colors), [3, 4, 5, 4, 8]);
-  assert.deepEqual([1, 5, 10].map(n => T.levelParams(n).mix), [2, 5, 8]);
+  assert.deepEqual([1, 5, 10, 11, 100].map(n => T.levelParams(n).colors), [3, 4, 6, 4, 8]);
+  assert.deepEqual([1, 5, 10].map(n => T.levelParams(n).mix), [4, 5, 8]);
 });
 test('makeImage has the requested size and exactly N colors, each used', () => {
   for (const n of [1, 5, 10, 37, 120]) {

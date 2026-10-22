@@ -86,10 +86,10 @@ test('level size and colors follow the spec', () => {
   assert.equal(T.levelParams(20).size, Math.round(21 * 1.6));
   assert.equal(T.levelParams(200).size, 32);
   assert.equal(T.levelParams(210).size, 40);
-  // cores: normal min(8, 3 + floor((n-1)/10)); difícil +1; super +2; máx 8
-  assert.deepEqual([1, 5, 10, 11, 100].map(n => T.levelParams(n).colors), [3, 4, 5, 4, 8]);
-  // mix (quanto os potes são embaralhados): normal 2, difícil 5, super 8
-  assert.deepEqual([1, 5, 10].map(n => T.levelParams(n).mix), [2, 5, 8]);
+  // cores: normal min(8, 3 + floor((n-1)/8)); difícil +1; super +2; máx 8
+  assert.deepEqual([1, 5, 10, 11, 100].map(n => T.levelParams(n).colors), [3, 4, 6, 4, 8]);
+  // mix (quanto os potes são embaralhados): normal 4, difícil 5, super 8
+  assert.deepEqual([1, 5, 10].map(n => T.levelParams(n).mix), [4, 5, 8]);
 });
 test('makeImage has the requested size and exactly N colors, each used', () => {
   for (const n of [1, 5, 10, 37, 120]) {
@@ -397,7 +397,7 @@ O layout segue o rascunho aprovado (`.superpowers/brainstorm/*/content/tela-jogo
 
 - [ ] **Step 1: Desenho e toques.** Quadradinho apagado com 18% de opacidade; exposto com 45% e contorno piscando a cada 1,6 s; aceso com cor cheia e brilho. O pote é de vidro com tampa de madeira, brilho da própria cor e o número de vaga-lumes. As linhas de trás ficam apagadas. Um toque no pote da frente chama `pick`. Segurar o pote mostra a `preview`; soltar em cima do pote faz o `pick`, e arrastar o dedo para fora cancela (escolha minha).
 - [ ] **Step 2: Vaga-lumes.** A cada 70 ms, `advance(s)`. Cada evento cria um vaga-lume que voa da vaga até o quadradinho em 400 ms, e o quadradinho só aparece aceso quando ele chega. Toca um "plim" (WebAudio, no máximo um a cada 40 ms). O loop limita o passo, então voltar de uma aba escondida não dispara centenas de eventos de uma vez.
-- [ ] **Step 3: Começo e fim.** A faixa SVG ondulada no formato de `faixa-v2.html`, mas **amarela** (sem arco-íris): acende e apaga como um vaga-lume, num ciclo de ~2,4 s (sobe o brilho em ~0,6 s, fica forte, apaga devagar até ~25% e fica quase apagada um instante), com o brilho (`drop-shadow` amarelo) acompanhando. No começo, entra, as letras caem uma a uma, mostra "Nível N" (com "· Difícil" ou "· Super difícil" na cor laranja ou vermelha e a aura da mesma cor) e sai depois de cerca de 2 s. No fim, quando `over === 'won'` e todos os vaga-lumes já pousaram: a imagem pisca, a faixa fica pulsando com "Nível N completo! ✨", vaga-lumes se espalham e aparece o botão "Continuar", que chama `winLevel`, salva e volta para o início.
+- [ ] **Step 3: Começo e fim.** A faixa SVG ondulada no formato de `faixa-v2.html`, mas **amarela** (sem arco-íris): acende e apaga como um vaga-lume, num ciclo rápido de ~1,2 s (sobe o brilho, fica forte, apaga até ~30% e fica quase apagada um instante), com o brilho (`drop-shadow` amarelo) acompanhando. No começo, entra, as letras caem uma a uma, mostra "Nível N" (com "· Difícil" ou "· Super difícil" na cor laranja ou vermelha e a aura da mesma cor) e sai depois de cerca de 2 s. No fim, quando `over === 'won'` e todos os vaga-lumes já pousaram: a imagem pisca, a faixa fica pulsando com "Nível N completo! ✨", vaga-lumes se espalham e aparece o botão "Continuar", que chama `winLevel`, salva e volta para o início.
 - [ ] **Step 4: Ajudas e derrota.** Os botões chamam `addSlot`, `shuffle(s, rng(Date.now()))` e `setAnyPick`. Só gastam com `spendHelp` se a função devolver `true`. Ficam apagados sem estoque, e o +1 vaga também depois de usado na fase. Com `over === 'lost'`: se tiver +1 vaga disponível, aparece "Barra cheia! Usar +1 vaga?" com Usar / Desistir. É a única ajuda que destrava uma barra cheia (escolha minha). Desistir chama `loseLife` e abre a tela "Você perdeu", com "Tentar de novo" (só com vida; recria com `createLevel(n)`, que não traz nenhuma ajuda de volta) e "Início".
 - [ ] **Step 5: Som.** Grilos em loop suave, gerados no WebAudio, liga/desliga conforme `save.musica`; o plim segue `save.som`. O áudio só começa no primeiro toque.
 - [ ] **Step 6: Verificar.** `preview_start` com `games`, abrir `http://localhost:8137/vagalumia/` em `resize_window` mobile. Conferir: console sem erros; vencer o nível 1; perder de propósito (encher a barra) e ver a oferta do +1 vaga; "Tentar de novo" repete os mesmos potes; no nível 51 (forçando `save.level`), segurar o pote não mostra prévia.
