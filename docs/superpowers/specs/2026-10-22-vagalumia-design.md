@@ -39,10 +39,10 @@ Jogo de quebra-cabeça para passar o tempo (sem guerra). Terceiro jogo do portal
 
 ## Faixa do nome
 
-- Faixa **ondulada, arco-íris e bem brilhante** escrita **VAGALUMIA**, levemente inclinada.
+- Faixa **ondulada, amarela, que acende e apaga como um vaga-lume** (brilho forte, depois quase apagada, devagar), escrita **VAGALUMIA**, levemente inclinada.
 - **Começo da fase:** entra deslizando, as letras caem uma a uma, mostra "Nível N · Difícil", e sai depois de ~2 s.
 - **Fim da fase:** entra e fica pulsando com "Nível N completo! ✨" e vaga-lumes espalhando.
-- Nas fases difíceis e super difíceis, a faixa continua arco-íris e só muda a aura em volta (laranja ou vermelha).
+- Nas fases difíceis e super difíceis, a faixa continua amarela piscando e só muda a aura em volta (laranja ou vermelha).
 
 ## Tela inicial
 
