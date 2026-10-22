@@ -318,7 +318,8 @@ function loseLife(save, now) {
 }
 function canPlay(save, now) { return livesNow(save, now).lives > 0; }
 function winLevel(save, n) {
-  if (n === save.level) save.level++;
+  if (n !== save.level) return;
+  save.level++;
   if (n % HELP_EVERY === 0) for (const k of ['slot', 'shuffle', 'any']) save.helps[k]++;
 }
 function spendHelp(save, id) {

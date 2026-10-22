@@ -43,3 +43,9 @@ test('parseSave falls back', () => {
   assert.deepEqual(T.parseSave('{"v":0}'), T.newSave());
   assert.equal(T.parseSave(JSON.stringify({ ...T.newSave(), level: 7 })).level, 7);
 });
+test('replaying a 50th level gives no help bonus', () => {
+  const s = T.newSave(); s.level = 51;
+  T.winLevel(s, 50);
+  assert.equal(s.level, 51);
+  assert.deepEqual(s.helps, { slot: 2, shuffle: 2, any: 2 });
+});
