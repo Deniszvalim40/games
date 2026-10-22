@@ -56,7 +56,7 @@ Jogo de quebra-cabeça para passar o tempo (sem guerra). Terceiro jogo do portal
 
 ## Visual e som
 
-Noite, fundo azul-escuro, potes de vidro com tampa de madeira, brilho suave. Som calmo de grilos; um "plim" a cada quadradinho aceso.
+Noite, fundo azul-escuro, potes de vidro com tampa de madeira, brilho suave. Música leve de marimba com grilos baixinhos; um "pop" de bolha a cada quadradinho aceso, subindo de tom enquanto acendem seguidos; "pop" de madeira ao pegar pote.
 
 ## Formato
 

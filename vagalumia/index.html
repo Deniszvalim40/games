@@ -137,15 +137,45 @@ function initAudio(){
     syncMusic();
   }else if(AC.state==='suspended')AC.resume();
 }
-const PLIM_F=[784,880,988,1175,1319,1568,1760,1976];
+// Acender: "pop" de bolha que sobe na escala pentatônica enquanto os acendimentos vêm seguidos.
+const PENTA=[0,2,4,7,9];let comboN=0;
 function plim(color){
   if(!AC||!save.som)return;
-  const now=performance.now();if(now-lastPlim<PLIM_GAP)return;lastPlim=now;
-  const t=AC.currentTime,f=PLIM_F[color%PLIM_F.length]*(1+(Math.random()-.5)*.01);
-  for(const[m,v,type]of[[1,.035,'sine'],[2,.012,'triangle']]){
-    const o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.value=f*m;
-    g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.005);g.gain.exponentialRampToValueAtTime(.0001,t+.32);
-    o.connect(g).connect(master);o.start(t);o.stop(t+.34);
+  const now=performance.now();if(now-lastPlim<PLIM_GAP)return;
+  comboN=now-lastPlim>450?0:(comboN+1)%10;lastPlim=now;
+  const f=523.25*Math.pow(2,(PENTA[comboN%5]+12*Math.floor(comboN/5))/12),t=AC.currentTime;
+  for(const[m,v,d,type]of[[1,.05,.14,'sine'],[2,.012,.08,'triangle']]){
+    const o=AC.createOscillator(),g=AC.createGain();o.type=type;
+    o.frequency.setValueAtTime(f*m*.8,t);o.frequency.exponentialRampToValueAtTime(f*m,t+.03);
+    g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.004);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+    o.connect(g).connect(master);o.start(t);o.stop(t+d+.02);
+  }
+}
+// Pegar pote: "pop" de madeira com o tom caindo.
+function popPot(){
+  if(!AC||!save.som)return;const t=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();
+  o.type='sine';o.frequency.setValueAtTime(420,t);o.frequency.exponentialRampToValueAtTime(140,t+.09);
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.07,t+.004);g.gain.exponentialRampToValueAtTime(.0001,t+.11);
+  o.connect(g).connect(master);o.start(t);o.stop(t+.13);
+}
+// Música: marimba leve em C–Am–F–G (colcheias a 96 bpm), agendada à frente como os grilos.
+const CHORDS=[[48,55,60,64,67],[45,52,57,60,64],[41,48,53,57,60],[43,50,55,59,62]],ARP=[2,3,4,3,1,3,4,2];
+let musStep=0,musNext=0;
+function marimba(t,f,v,out){
+  for(const[m,k,d]of[[1,1,.5],[4,.12,.12]]){
+    const o=AC.createOscillator(),g=AC.createGain();o.type='sine';o.frequency.value=f*m;
+    g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v*k,t+.006);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+    o.connect(g).connect(out);o.start(t);o.stop(t+d+.02);
+  }
+}
+function musicTick(){
+  const now=AC.currentTime,mf=m=>440*Math.pow(2,(m-69)/12);
+  if(musNext<now)musNext=now+.1;
+  while(musNext<now+.6){
+    const ch=CHORDS[(musStep>>3)%4],i=musStep%8;
+    marimba(musNext,mf(ch[ARP[i]]+12),.016,musicGain);
+    if(i%4===0)marimba(musNext,mf(ch[0]-12),.03,musicGain);
+    musStep++;musNext+=.3125;
   }
 }
 function beep(f,d,v=.03){
@@ -158,7 +188,7 @@ function chirp(t,f,pan){
   const o=AC.createOscillator(),g=AC.createGain();o.type='sine';o.frequency.value=f;
   g.gain.setValueAtTime(0,t);
   const n=3+(Math.random()*2|0);
-  for(let k=0;k<n;k++){const a=t+k*.034;g.gain.setValueAtTime(0,a);g.gain.linearRampToValueAtTime(.011,a+.006);g.gain.linearRampToValueAtTime(0,a+.02)}
+  for(let k=0;k<n;k++){const a=t+k*.034;g.gain.setValueAtTime(0,a);g.gain.linearRampToValueAtTime(.005,a+.006);g.gain.linearRampToValueAtTime(0,a+.02)}
   let out=g;if(AC.createStereoPanner){const p=AC.createStereoPanner();p.pan.value=pan;g.connect(p);out=p}
   o.connect(g);out.connect(musicGain);o.start(t);o.stop(t+n*.034+.05);
 }
@@ -169,6 +199,7 @@ function cricketTick(){
     if(nextChirp[i]<now)nextChirp[i]=now+.1+Math.random()*.5;
     while(nextChirp[i]<now+.6){chirp(nextChirp[i],f,pan);nextChirp[i]+=.75+Math.random()*.9+(Math.random()<.15?1.5:0)}
   });
+  musicTick();
 }
 function syncMusic(){
   if(!AC)return;
@@ -409,7 +440,7 @@ function endHold(e,cancel){
   if(!hold||e.pointerId!==hold.id)return;
   const h=hold;hold=null;clearTimeout(h.timer);previewCells=[];
   if(cancel||!h.inside||phase!=='play')return;
-  if(V.pick(s,h.col,h.row))beep(520,.06,.02);else beep(170,.12,.03);
+  if(V.pick(s,h.col,h.row))popPot();else beep(170,.12,.03);
   updateHelps();
 }
 cv.addEventListener('pointerup',e=>endHold(e,false));
@@ -426,6 +457,8 @@ function updateHelps(){
 }
 function useHelp(id,fn){
   if(phase!=='play'||!(save.helps[id]>0))return false;
+  // fase já decidida (vaga-lumes ainda voando): só +1 vaga salva uma derrota
+  if(s.over&&!(id==='slot'&&s.over==='lost'))return false;
   if(!fn())return false;
   V.spendHelp(save,id);saveGame();updateHelps();beep(880,.1,.03);return true;
 }
@@ -502,7 +535,7 @@ function ribbonHide(){if(game.classList.contains('intro')){game.classList.remove
 // ---------- fim ----------
 function startEnd(){
   phase='end';endAt=performance.now();updateHelps();
-  [523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,.22,.05),i*140));
+  [523,659,784,1047,1319].forEach((f,i)=>setTimeout(()=>{if(AC&&save.som)marimba(AC.currentTime,f,.07,master)},i*120));
   ribbonStart('end',s.n);
   const fx=$('fx');fx.innerHTML='';
   const b=$('rib').getBoundingClientRect(),gb=game.getBoundingClientRect(),cx=b.left+b.width/2-gb.left,cy=b.top+b.height/2-gb.top;
