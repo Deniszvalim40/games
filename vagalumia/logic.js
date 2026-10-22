@@ -192,7 +192,72 @@ function status(s) {
   return 'lost';
 }
 
+// ===== Geração da fase =====
+function copyState(s) {
+  return Object.assign({}, s, { cells: s.cells.slice(), lit: s.lit.slice(), cols: structuredClone(s.cols), bar: structuredClone(s.bar) });
+}
+// Simula numa cópia a ordem de acender: cada pote acende até k quadradinhos de uma cor exposta.
+function peel(s, rand) {
+  const c = copyState(s), seq = [];
+  let colors = 0; for (let i = 0; i < c.cells.length; i++) if (c.cells[i] >= colors) colors = c.cells[i] + 1;
+  for (;;) {
+    const ready = [];
+    for (let col = 0; col < colors; col++) if (target(c, col) >= 0) ready.push(col);
+    if (!ready.length) break;
+    const color = ready[Math.floor(rand() * ready.length)];
+    const k = POT_MIN + Math.floor(rand() * (POT_MAX - POT_MIN + 1));
+    let count = 0;
+    while (count < k) { const i = target(c, color); if (i < 0) break; c.lit[i] = 1; count++; }
+    seq.push({ color, count });
+  }
+  return seq;
+}
+// O pote i vai para a coluna i % 5.
+function deal(seq) {
+  const cols = []; for (let i = 0; i < COLS; i++) cols.push([]);
+  seq.forEach((p, i) => cols[i % COLS].push({ color: p.color, count: p.count }));
+  return cols;
+}
+// Guloso numa cópia: solta se der; senão pega o pote da frente cuja cor tem exposto
+// (preferindo o que veio antes na distribuição); senão a primeira coluna não vazia.
+function solve(s) {
+  const c = copyState(s), len0 = c.cols.map(col => col.length);
+  let st = status(c);
+  while (st === null) {
+    if (c.bar.some(p => p && target(c, p.color) >= 0)) { advance(c); st = c.over; continue; }
+    let best = -1, bi = Infinity;
+    for (let col = 0; col < c.cols.length; col++) {
+      const f = c.cols[col][0];
+      if (!f || target(c, f.color) < 0) continue;
+      const idx = (len0[col] - c.cols[col].length) * COLS + col;
+      if (idx < bi) { bi = idx; best = col; }
+    }
+    if (best < 0) best = c.cols.findIndex(col => col.length > 0);
+    if (best < 0 || !pick(c, best)) return false;
+    st = status(c);
+  }
+  return st === 'won';
+}
+function createLevel(n) {
+  const rand = rng(seedFor(n)), { tier, mix } = levelParams(n), img = makeImage(n, rand);
+  const base = { n, tier, w: img.w, h: img.h, cells: img.cells, lit: new Uint8Array(img.w * img.h),
+    cols: null, bar: new Array(BAR).fill(null), cap: BAR, extra: false, anyPick: false, over: null };
+  const seq = peel(base, rand);
+  for (let t = 0; t < 20; t++) {
+    const q = seq.slice();
+    for (let i = 0; i < q.length; i++) {
+      const j = i + Math.floor(rand() * (Math.min(i + mix, q.length - 1) - i + 1));
+      const x = q[i]; q[i] = q[j]; q[j] = x;
+    }
+    base.cols = deal(q);
+    if (solve(base)) return base;
+  }
+  base.cols = deal(seq);
+  return base;
+}
+
 return { COLS, VISIBLE_ROWS, BAR, POT_MIN, POT_MAX, MAX_LIVES, LIFE_MS, START_HELPS, HELP_EVERY, PREVIEW_UNTIL, PALETTE,
   rng, seedFor, tierOf, levelParams, ART, makeImage,
-  fromGrid, isExposed, exposedOf, target, pick, advance, status };
+  fromGrid, isExposed, exposedOf, target, pick, advance, status,
+  peel, deal, solve, createLevel };
 });
