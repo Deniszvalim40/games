@@ -15,7 +15,7 @@
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0d1410;--fg:#eef3ea}}
 :root[data-theme="dark"]{--bg:#0d1410;--fg:#eef3ea}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;overscroll-behavior:none}
-canvas{display:block;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)}
+canvas{display:block;position:absolute;left:50%;top:calc((100% - var(--rk,0px))/2);transform:translate(-50%,-50%)}
 #rot{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;background:var(--bg);color:var(--fg);font:700 20px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;text-align:center;padding:16px}
 #rot span{font-size:54px}
 #nick{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(8,12,9,.7);font:600 16px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
@@ -35,6 +35,10 @@ canvas{display:block;position:absolute;left:50%;top:50%;transform:translate(-50%
 <canvas id="c"></canvas>
 <div id="nick" hidden><form><label for="nick-in">Seu apelido no rank</label><input id="nick-in" maxlength="16" autocomplete="off" placeholder="Ex.: Sargento Zé"><div class="row"><button type="button" id="nick-no">Cancelar</button><button type="submit">Salvar</button></div></form></div>
 <div id="rot"><span>📱↻</span>Gire o celular para jogar</div>
+<script src="../ranking/config.js"></script>
+<script src="../ranking/pix.js"></script>
+<script src="../ranking/qrcode.js"></script>
+<script src="../ranking/ranking.js"></script>
 <script src="logic.js"></script>
 <script>
 // ===== Trincheira — guerra de trincheiras contra o computador =====
@@ -44,7 +48,7 @@ const cv=document.getElementById('c'),ctx=cv.getContext('2d');
 let scale=1;
 function resize(){
   const dpr=Math.min(window.devicePixelRatio||1,2);
-  scale=Math.min(innerWidth/W,innerHeight/H);
+  scale=Math.min(innerWidth/W,(innerHeight-(window.RANK_H||0))/H);
   cv.style.width=W*scale+'px';cv.style.height=H*scale+'px';
   cv.width=Math.round(W*scale*dpr);cv.height=Math.round(H*scale*dpr);
   ctx.setTransform(cv.width/W,0,0,cv.height/H,0,0);
@@ -473,6 +477,8 @@ function loop(now){
 }
 requestAnimationFrame(loop);
 if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+if(window.Ranking)Ranking.init({game:'Trincheira',col:'rank_trincheira',prefix:'TR',score:()=>prest*100+wins.length,
+  fmt:n=>{const p=Math.floor(n/100),v=n%100;return(p?'★'+p+' · ':'')+v+(v===1?' vitória':' vitórias')},onOpen:()=>pause()});
 </script>
 </body>
 </html>

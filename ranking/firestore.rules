@@ -1,0 +1,24 @@
+rules_version = '2';
+// Regras do ranking: qualquer um lê e cria (com campos validados); ninguém altera nem apaga pelo site.
+// Nomes indevidos: apague pelo painel do Firebase (Firestore Database → Dados).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function jogo(col) {
+      return col in ['rank_vagalumia', 'rank_trincheira', 'rank_aero'];
+    }
+    function valido(d) {
+      return d.keys().hasOnly(['name', 'score', 'valor', 'codigo', 'at'])
+        && d.keys().hasAll(['name', 'score', 'valor', 'codigo', 'at'])
+        && d.name is string && d.name.size() >= 1 && d.name.size() <= 16
+        && d.score is int && d.score > 0 && d.score < 1000000000
+        && d.valor is number && d.valor >= 1 && d.valor <= 100000
+        && d.codigo is string && d.codigo.size() <= 25
+        && d.at is timestamp;
+    }
+    match /{col}/{id} {
+      allow read: if jogo(col);
+      allow create: if jogo(col) && valido(request.resource.data);
+      allow update, delete: if false;
+    }
+  }
+}

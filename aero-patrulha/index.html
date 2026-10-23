@@ -15,7 +15,7 @@
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0d1410;--fg:#eef3ea}}
 :root[data-theme="dark"]{--bg:#0d1410;--fg:#eef3ea}
 html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;overscroll-behavior:none}
-canvas{display:block;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);cursor:crosshair}
+canvas{display:block;position:absolute;left:50%;top:calc((100% - var(--rk,0px))/2);transform:translate(-50%,-50%);cursor:crosshair}
 #nameBox{position:fixed;left:50%;top:56%;transform:translate(-50%,-50%);display:none;flex-direction:column;align-items:center;gap:10px;width:min(300px,calc(100vw - 32px));font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 #nameBox.on{display:flex}
 #nameBox input{width:100%;box-sizing:border-box;font:700 20px system-ui,sans-serif;text-align:center;text-transform:uppercase;padding:12px;border-radius:10px;border:2px solid #7fd18b;background:rgba(10,16,12,.9);color:var(--fg);outline:none}
@@ -31,6 +31,10 @@ canvas{display:block;position:absolute;left:50%;top:50%;transform:translate(-50%
   <input id="nameIn" maxlength="12" placeholder="SEU NOME" autocomplete="off" enterkeyhint="done">
   <div class="row"><button id="nameSkip">Pular</button><button id="nameSave">Salvar</button></div>
 </div>
+<script src="../ranking/config.js"></script>
+<script src="../ranking/pix.js"></script>
+<script src="../ranking/qrcode.js"></script>
+<script src="../ranking/ranking.js"></script>
 <script>
 // ===== Aero Patrulha — jogo original: drone, bateria, mapa aberto em rolagem vertical =====
 const W=360,H=640,PY=H-130,CH=640,SL=3200,RS=2;
@@ -38,7 +42,7 @@ const cv=document.getElementById('c'),ctx=cv.getContext('2d');
 let scale=1;
 function resize(){
   const dpr=Math.min(window.devicePixelRatio||1,2);
-  scale=Math.min(innerWidth/W,innerHeight/H);
+  scale=Math.min(innerWidth/W,(innerHeight-(window.RANK_H||0))/H);
   cv.style.width=W*scale+'px';cv.style.height=H*scale+'px';
   cv.width=Math.round(W*scale*dpr);cv.height=Math.round(H*scale*dpr);
   ctx.setTransform(cv.width/W,0,0,cv.height/H,0,0);
@@ -974,6 +978,7 @@ document.addEventListener('visibilitychange',()=>{last=performance.now();if(docu
 resetClouds();
 requestAnimationFrame(loop);
 if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+if(window.Ranking)Ranking.init({game:'Aero Patrulha',col:'rank_aero',prefix:'AP',score:()=>hi,fmt:n=>n+' pts',onOpen:()=>pauseGame()});
 </script>
 </body>
 </html>

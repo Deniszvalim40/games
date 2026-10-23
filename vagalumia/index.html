@@ -16,7 +16,7 @@
 html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;overscroll-behavior:none;-webkit-tap-highlight-color:transparent;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 body{background:radial-gradient(ellipse at top,#1b2a4a,#070b16 70%) var(--bg)}
 button{font:inherit;color:inherit;cursor:pointer}
-.screen{position:fixed;inset:0;display:none;flex-direction:column;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);overflow:hidden}
+.screen{position:fixed;inset:0;bottom:var(--rk,0px);display:none;flex-direction:column;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);overflow:hidden}
 .screen.show{display:flex}
 
 /* ----- Início ----- */
@@ -187,6 +187,10 @@ button{font:inherit;color:inherit;cursor:pointer}
   </div></div>
 </section>
 
+<script src="../ranking/config.js"></script>
+<script src="../ranking/pix.js"></script>
+<script src="../ranking/qrcode.js"></script>
+<script src="../ranking/ranking.js"></script>
 <script src="logic.js"></script>
 <script>
 // ===== Vagalumia — tela da fase =====
@@ -738,6 +742,7 @@ requestAnimationFrame(frame);
 try{if(new URLSearchParams(location.search).has('debug'))window.vg={get s(){return s},get save(){return save},get preview(){return previewCells},saveGame,startLevel,showHome}}catch(e){}
 showHome();
 if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+if(window.Ranking)Ranking.init({game:'Vagalumia',col:'rank_vagalumia',prefix:'VG',score:()=>save.level-1,fmt:n=>'Nível '+n});
 </script>
 </body>
 </html>
