@@ -19,10 +19,11 @@ function levelParams(n) {
   const base = Math.min(32, 16 + Math.floor((n - 1) / 2));
   const side = tier === 'normal' ? base : Math.min(40, Math.round(base * (tier === 'dificil' ? 1.3 : 1.6)));
   const size = Math.round(side * GROW);
-  // todos os níveis têm a dificuldade do super difícil (+2 cores, potes bem embaralhados); o tamanho muda por tier
-  const colors = Math.min(8, 5 + Math.floor((n - 1) / 8));
-  const mix = 8;
-  return { tier, size, colors, mix };
+  // normal: dificuldade do antigo super. Difícil ≈ 2× mais derrotas que antes; terminado em 0 ≈ 3× (barra menor, mais cores e potes mais embaralhados).
+  const colors = Math.min(8, 5 + Math.floor((n - 1) / 8) + (tier === 'normal' ? 0 : tier === 'dificil' ? 1 : 3));
+  const mix = tier === 'normal' ? 8 : tier === 'dificil' ? 16 : 32;
+  const bar = tier === 'normal' ? BAR : tier === 'dificil' ? 4 : 3;
+  return { tier, size, colors, mix, bar };
 }
 
 // ===== Artes (regiões em coordenadas normalizadas; -1 = fora) =====
@@ -255,14 +256,16 @@ function solve(s) {
   return st === 'won';
 }
 function createLevel(n) {
-  const rand = rng(seedFor(n)), { tier, mix } = levelParams(n), img = makeImage(n, rand);
+  const rand = rng(seedFor(n)), { tier, mix, bar } = levelParams(n), img = makeImage(n, rand);
   const base = { n, tier, w: img.w, h: img.h, cells: img.cells, lit: new Uint8Array(img.w * img.h),
-    cols: null, bar: new Array(BAR).fill(null), cap: BAR, extra: false, anyPick: false, over: null };
+    cols: null, bar: new Array(bar).fill(null), cap: bar, extra: false, anyPick: false, over: null };
   const seq = peel(base, rand);
-  for (let t = 0; t < 20; t++) {
+  // Tenta o embaralhamento cheio; se não sai resolvível, corta a janela pela metade a cada 3 tentativas (nunca volta direto à ordem fácil).
+  for (let t = 0; t < 18; t++) {
+    const m = Math.max(1, mix >> Math.floor(t / 3));
     const q = seq.slice();
     for (let i = 0; i < q.length; i++) {
-      const j = i + Math.floor(rand() * (Math.min(i + mix, q.length - 1) - i + 1));
+      const j = i + Math.floor(rand() * (Math.min(i + m, q.length - 1) - i + 1));
       const x = q[i]; q[i] = q[j]; q[j] = x;
     }
     base.cols = deal(q);
@@ -275,7 +278,7 @@ function createLevel(n) {
 // ===== Ajudas =====
 function addSlot(s) {
   if (s.extra) return false;
-  s.bar.push(null); s.cap = BAR + 1; s.extra = true;
+  s.bar.push(null); s.cap = s.bar.length; s.extra = true;
   if (s.over === 'lost') s.over = null;
   return true;
 }

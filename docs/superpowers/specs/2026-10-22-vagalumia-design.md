@@ -12,14 +12,14 @@ Jogo de quebra-cabeça para passar o tempo (sem guerra). Terceiro jogo do portal
 - **Ganha** quando a imagem inteira acende. **Perde** quando a barra está cheia e nenhum vaga-lume tem quadradinho exposto para acender.
 - Os quadradinhos expostos piscam o contorno.
 - **Prévia (até o nível 50):** segurando o dedo num pote, os quadradinhos expostos daquela cor brilham mais.
-- **Dá para perder:** pegar pote de cor que ainda não tem quadradinho exposto ocupa a vaga; com as 5 vagas presas, a fase acaba.
+- **Dá para perder:** pegar pote de cor que ainda não tem quadradinho exposto ocupa a vaga; com todas as vagas presas, a fase acaba. Simulação (jogador cuidadoso): normal perde ~11%, difícil ~23% (2×), final 0 ~38% (3×+).
 - Toda fase tem solução: o total de vaga-lumes de cada cor é igual ao total de quadradinhos dessa cor.
 
 ## Níveis
 
 - **Normal:** a imagem começa em 28×28 e cresce até 55×55 (3× os quadrados do desenho original de 16→32). Todos os níveis têm a dificuldade do super difícil: começa com 5 cores e chega a 8, potes bem embaralhados.
-- **Final 5 (5, 15, 25…) = Difícil:** imagem ~30% maior de lado. Aviso laranja.
-- **Final 0 (10, 20, 30…) = Super difícil:** imagem ~60% maior (até 69×69); cores mais presas no meio. Aviso vermelho.
+- **Final 5 (5, 15, 25…) = Difícil:** imagem ~30% maior de lado. Aviso laranja. **Barra com 4 vagas**, +1 cor e potes 2× mais embaralhados.
+- **Final 0 (10, 20, 30…) = Super difícil:** imagem ~60% maior (até 69×69); cores mais presas no meio. **Barra com 3 vagas**, +3 cores (até 8) e potes 4× mais embaralhados. Aviso vermelho.
 - Os quadradinhos diminuem para caber na tela, porque ninguém clica na imagem.
 
 ## Ajudas (rodapé da tela, abaixo dos potes)
