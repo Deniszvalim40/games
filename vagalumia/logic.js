@@ -17,7 +17,7 @@ function tierOf(n) { return n % 10 === 0 ? 'super' : n % 5 === 0 ? 'dificil' : '
 function levelParams(n) {
   const tier = tierOf(n);
   const base = Math.min(32, 16 + Math.floor((n - 1) / 2));
-  const side = tier === 'normal' ? base : Math.min(40, Math.round(base * (tier === 'dificil' ? 1.3 : 1.6)));
+  const side = tier === 'dificil' ? Math.min(40, Math.round(base * 1.3)) : base; // super usa o tamanho do normal
   const size = Math.round(side * GROW);
   const colors = Math.min(8, 3 + Math.floor((n - 1) / 8) + (tier === 'dificil' ? 1 : tier === 'super' ? 2 : 0));
   const mix = tier === 'normal' ? 4 : tier === 'dificil' ? 5 : 8;
