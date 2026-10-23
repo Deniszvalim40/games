@@ -19,8 +19,9 @@ function levelParams(n) {
   const base = Math.min(32, 16 + Math.floor((n - 1) / 2));
   const side = tier === 'normal' ? base : Math.min(40, Math.round(base * (tier === 'dificil' ? 1.3 : 1.6)));
   const size = Math.round(side * GROW);
-  const colors = Math.min(8, 3 + Math.floor((n - 1) / 8) + (tier === 'dificil' ? 1 : tier === 'super' ? 2 : 0));
-  const mix = tier === 'normal' ? 4 : tier === 'dificil' ? 5 : 8;
+  // todos os níveis têm a dificuldade do super difícil (+2 cores, potes bem embaralhados); o tamanho muda por tier
+  const colors = Math.min(8, 5 + Math.floor((n - 1) / 8));
+  const mix = 8;
   return { tier, size, colors, mix };
 }
 
@@ -87,7 +88,8 @@ const ART = [
 ];
 
 // ===== Imagem =====
-// Cada célula recebe um índice de cor 0..colors-1; fora do desenho = -1.
+// Cada célula recebe um índice de cor 0..colors-1. O fundo também é pintado (uma cor só),
+// então a imagem acende de fora para dentro e as cores do desenho começam presas.
 function makeImage(n, rand) {
   const { tier, size, colors } = levelParams(n);
   const art = ART[(n - 1) % ART.length];
@@ -101,11 +103,13 @@ function makeImage(n, rand) {
   // Compacta ids de região para 0..k-1.
   let k = ids.length;
   for (let i = 0; i < reg.length; i++) if (reg[i] >= 0) reg[i] = ids.indexOf(reg[i]);
-  // Faltam regiões: divide a maior (faixas horizontais; anéis concêntricos no 'super').
+  let bg = -1;
+  if (reg.some(r => r < 0)) { bg = k++; for (let i = 0; i < reg.length; i++) if (reg[i] < 0) reg[i] = bg; }
+  // Faltam regiões: divide a maior do desenho, nunca o fundo (faixas horizontais; anéis concêntricos no 'super').
   while (k < colors) {
     const cells = [], cnt = new Array(k).fill(0);
     for (let i = 0; i < reg.length; i++) if (reg[i] >= 0) cnt[reg[i]]++;
-    let big = 0; for (let i = 1; i < k; i++) if (cnt[i] > cnt[big]) big = i;
+    let big = -1; for (let i = 0; i < k; i++) if (i !== bg && (big < 0 || cnt[i] > cnt[big])) big = i;
     for (let i = 0; i < reg.length; i++) if (reg[i] === big) cells.push(i);
     let key;
     if (tier === 'super') {
@@ -276,11 +280,14 @@ function addSlot(s) {
   return true;
 }
 function shuffle(s, rand) {
-  const pots = [];
-  for (const col of s.cols) for (const p of col) pots.push({ color: p.color, count: p.count });
-  for (let t = 0; t < 30; t++) {
-    for (let i = pots.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); const x = pots[i]; pots[i] = pots[j]; pots[j] = x; }
-    const cols = deal(pots);
+  // pega os potes na ordem da distribuição (linha a linha) para a mistura curta respeitar a fila
+  const pots = [], depth = Math.max(0, ...s.cols.map(c => c.length));
+  for (let d = 0; d < depth; d++) for (const col of s.cols) if (col[d]) pots.push({ color: col[d].color, count: col[d].count });
+  for (let t = 0; t < 60; t++) {
+    const q = pots.slice();
+    if (t < 20) for (let i = q.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); const x = q[i]; q[i] = q[j]; q[j] = x; }
+    else for (let i = 0; i < q.length; i++) { const j = i + Math.floor(rand() * (Math.min(i + 8, q.length - 1) - i + 1)); const x = q[i]; q[i] = q[j]; q[j] = x; }
+    const cols = deal(q);
     if (solve(Object.assign({}, s, { cols }))) { s.cols = cols; return true; }
   }
   return false;

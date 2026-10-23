@@ -4,7 +4,7 @@ Jogo de quebra-cabeça para passar o tempo (sem guerra). Terceiro jogo do portal
 
 ## A fase
 
-- **Imagem no meio:** pixel art que começa apagada (cada quadradinho mostra a cor bem fraca). A imagem muda a cada fase.
+- **Imagem no meio:** pixel art que começa apagada (cada quadradinho mostra a cor bem fraca). A imagem muda a cada fase. **O fundo também é pintado** (uma cor só), então as cores do desenho começam presas e só abrem quando o fundo em volta acende.
 - **Potes embaixo:** 5 colunas × 5 de profundidade. Cada pote tem uma cor e um número (quantos vaga-lumes tem dentro, de 12 a 30). **Só a linha da frente é clicável**; quando um pote sai, o de trás desce. As cores de trás ficam visíveis, mas apagadas.
 - **Barra com 5 vagas:** o pote clicado vai para a barra e solta os vaga-lumes. Cada vaga-lume acende **um quadradinho exposto da mesma cor**.
 - **Exposto** = encostado por cima, baixo ou lados na borda da imagem ou num quadradinho já aceso. **Diagonal não vale.** A imagem acende de fora para dentro.
@@ -12,13 +12,14 @@ Jogo de quebra-cabeça para passar o tempo (sem guerra). Terceiro jogo do portal
 - **Ganha** quando a imagem inteira acende. **Perde** quando a barra está cheia e nenhum vaga-lume tem quadradinho exposto para acender.
 - Os quadradinhos expostos piscam o contorno.
 - **Prévia (até o nível 50):** segurando o dedo num pote, os quadradinhos expostos daquela cor brilham mais.
+- **Dá para perder:** pegar pote de cor que ainda não tem quadradinho exposto ocupa a vaga; com as 5 vagas presas, a fase acaba.
 - Toda fase tem solução: o total de vaga-lumes de cada cor é igual ao total de quadradinhos dessa cor.
 
 ## Níveis
 
-- **Normal:** a imagem começa em 28×28 e cresce até 55×55 (3× os quadrados do desenho original de 16→32). Começa com 3 cores e chega a 8.
-- **Final 5 (5, 15, 25…) = Difícil:** imagem ~30% maior de lado e +1 ou 2 cores; potes mais embaralhados. Aviso laranja.
-- **Final 0 (10, 20, 30…) = Super difícil:** imagem ~60% maior (até 69×69) e +2 ou 3 cores; cores mais presas no meio. Aviso vermelho.
+- **Normal:** a imagem começa em 28×28 e cresce até 55×55 (3× os quadrados do desenho original de 16→32). Todos os níveis têm a dificuldade do super difícil: começa com 5 cores e chega a 8, potes bem embaralhados.
+- **Final 5 (5, 15, 25…) = Difícil:** imagem ~30% maior de lado. Aviso laranja.
+- **Final 0 (10, 20, 30…) = Super difícil:** imagem ~60% maior (até 69×69); cores mais presas no meio. Aviso vermelho.
 - Os quadradinhos diminuem para caber na tela, porque ninguém clica na imagem.
 
 ## Ajudas (rodapé da tela, abaixo dos potes)
