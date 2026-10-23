@@ -16,9 +16,9 @@ Jogo de quebra-cabeça para passar o tempo (sem guerra). Terceiro jogo do portal
 
 ## Níveis
 
-- **Normal:** a imagem começa em 16×16 e cresce 1 a cada 2 níveis, até 32×32. Começa com 3 cores e chega a 8.
+- **Normal:** a imagem começa em 28×28 e cresce até 55×55 (3× os quadrados do desenho original de 16→32). Começa com 3 cores e chega a 8.
 - **Final 5 (5, 15, 25…) = Difícil:** imagem ~30% maior de lado e +1 ou 2 cores; potes mais embaralhados. Aviso laranja.
-- **Final 0 (10, 20, 30…) = Super difícil:** imagem ~60% maior (até 40×40) e +2 ou 3 cores; cores mais presas no meio. Aviso vermelho.
+- **Final 0 (10, 20, 30…) = Super difícil:** imagem ~60% maior (até 69×69) e +2 ou 3 cores; cores mais presas no meio. Aviso vermelho.
 - Os quadradinhos diminuem para caber na tela, porque ninguém clica na imagem.
 
 ## Ajudas (rodapé da tela, abaixo dos potes)
@@ -69,4 +69,4 @@ Igual aos outros jogos: pasta `games/vagalumia/` com `index.html`, lógica separ
 - O jogo oferece a ajuda antes de declarar a derrota.
 - As imagens vêm de um conjunto de pixel arts desenhadas no próprio código (bichos, frutas, objetos), e as cores e a ordem dos potes são sorteadas de forma que a fase sempre tenha solução.
 - Som de grilos e "plim".
-- Nenhum limite de níveis: depois do 32×32 (40×40 nos especiais), as imagens só variam.
+- Nenhum limite de níveis: depois do 55×55 (69×69 nos especiais), as imagens só variam.

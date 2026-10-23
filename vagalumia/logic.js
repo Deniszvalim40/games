@@ -5,6 +5,7 @@
 // ===== Constantes =====
 const COLS = 5, VISIBLE_ROWS = 5, BAR = 5, POT_MIN = 12, POT_MAX = 30, MAX_LIVES = 5;
 const LIFE_MS = 600000, START_HELPS = 2, HELP_EVERY = 50, PREVIEW_UNTIL = 50;
+const GROW = Math.sqrt(3); // lado × √3 = 3× mais quadrados
 const PALETTE = ['#ff1744', '#ffee00', '#39ff14', '#1f8bff', '#b026ff', '#ff7a00', '#00f0ff', '#ff2bd6'];
 
 // ===== Aleatório determinístico =====
@@ -16,7 +17,8 @@ function tierOf(n) { return n % 10 === 0 ? 'super' : n % 5 === 0 ? 'dificil' : '
 function levelParams(n) {
   const tier = tierOf(n);
   const base = Math.min(32, 16 + Math.floor((n - 1) / 2));
-  const size = tier === 'normal' ? base : Math.min(40, Math.round(base * (tier === 'dificil' ? 1.3 : 1.6)));
+  const side = tier === 'normal' ? base : Math.min(40, Math.round(base * (tier === 'dificil' ? 1.3 : 1.6)));
+  const size = Math.round(side * GROW);
   const colors = Math.min(8, 3 + Math.floor((n - 1) / 8) + (tier === 'dificil' ? 1 : tier === 'super' ? 2 : 0));
   const mix = tier === 'normal' ? 4 : tier === 'dificil' ? 5 : 8;
   return { tier, size, colors, mix };
