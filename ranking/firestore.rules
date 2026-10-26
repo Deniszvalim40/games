@@ -8,10 +8,10 @@ service cloud.firestore {
     }
     function valido(d) {
       return d.keys().hasOnly(['name', 'score', 'valor', 'codigo', 'at'])
-        && d.keys().hasAll(['name', 'score', 'valor', 'codigo', 'at'])
+        && d.keys().hasAll(['name', 'score', 'codigo', 'at'])
         && d.name is string && d.name.size() >= 1 && d.name.size() <= 16
         && d.score is int && d.score > 0 && d.score < 1000000000
-        && d.valor is number && d.valor >= 1 && d.valor <= 100000
+        && (!('valor' in d) || (d.valor is number && d.valor >= 1 && d.valor <= 100000))
         && d.codigo is string && d.codigo.size() <= 25
         && d.at is timestamp;
     }

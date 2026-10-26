@@ -21,6 +21,12 @@ test('brCode monta os campos na ordem e fecha com CRC', () => {
   assert.strictEqual(P.crc16(s.slice(0, -4)), s.slice(-4));
 });
 
+test('brCode sem valor não leva o campo 54 (valor livre)', () => {
+  const s = P.brCode({ key: 'a@b.co', name: 'A', city: 'B', txid: 'X' });
+  assert.ok(!/5303986540/.test(s)); assert.ok(s.includes('5303986' + '5802BR'));
+  assert.equal(s.slice(-4), P.crc16(s.slice(0, -4)));
+});
+
 test('brCode tira acentos, corta nome e cidade e formata o valor', () => {
   const s = P.brCode({ key: 'a@b.co', name: 'José da Conceição Aparecida Silva', city: 'São José dos Campos', amount: 12.5, txid: 'X' });
   assert.ok(s.includes('540512.50'));

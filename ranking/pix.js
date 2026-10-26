@@ -22,7 +22,7 @@ function brCode({ key, name, city, amount, txid }) {
   const tx = String(txid || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 25) || '***';
   const body = tlv('00', '01')
     + tlv('26', tlv('00', 'br.gov.bcb.pix') + tlv('01', key))
-    + tlv('52', '0000') + tlv('53', '986') + tlv('54', Number(amount).toFixed(2))
+    + tlv('52', '0000') + tlv('53', '986') + (amount ? tlv('54', Number(amount).toFixed(2)) : '') // sem valor: a pessoa digita no app do banco
     + tlv('58', 'BR') + tlv('59', ascii(name).slice(0, 25)) + tlv('60', ascii(city).slice(0, 15))
     + tlv('62', tlv('05', tx)) + '6304';
   return body + crc16(body);

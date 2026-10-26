@@ -1,4 +1,4 @@
-const CACHE='vagalumia-v5';
+const CACHE='vagalumia-v6';
 const FILES=['./','index.html','logic.js','manifest.webmanifest','icon-192.png','icon-512.png','icon-maskable-512.png','../ranking/config.js','../ranking/pix.js','../ranking/qrcode.js','../ranking/ranking.js'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)));self.skipWaiting()});
 // só apaga caches antigos do próprio Vagalumia (os outros jogos dividem a origem)

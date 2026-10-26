@@ -47,7 +47,7 @@ const CSS = `
 #rk-dlg .rk-err{color:#ff8a80}
 `;
 
-let cfg = null, list = [], state = ON ? 'load' : 'off', step = 'list', myScore = 0, code = '', valor = 1;
+let cfg = null, list = [], state = ON ? 'load' : 'off', step = 'list', myScore = 0, code = '';
 let bar, run, dlg, card;
 const WAIT = 60; // segundos com o "Já fiz o Pix" travado, contados ao abrir o Pix e de novo ao copiar o código
 let pixOk = true, waitUntil = 0, waitTimer = 0;
@@ -111,7 +111,7 @@ function renderDlg() {
       + '<button class="rk-main" data-go="pix"' + (ON && sc > 0 ? '' : ' disabled') + '>Colocar meu nome</button>'
       + '<p class="rk-note">Para entrar no ranking: um Pix de R$ 1,00 ou mais.</p>';
   } else if (step === 'pix') {
-    body = '<label>Valor do Pix (mínimo R$ 1,00)<input class="rk-val" inputmode="decimal" value="' + valor.toFixed(2).replace('.', ',') + '"></label>'
+    body = '<p style="margin-top:0">Valor livre: você escolhe quanto mandar no app do banco (mínimo R$ 1,00).</p>'
       + '<div class="rk-qr"></div>'
       + '<label style="margin-top:10px">Pix copia e cola<textarea class="rk-cc" readonly></textarea></label>'
       + '<button class="rk-sec" data-copy>Copiar código Pix</button>'
@@ -129,9 +129,6 @@ function renderDlg() {
   card.querySelector('.rk-x').onclick = close;
   card.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(b.dataset.go));
   if (step === 'pix') {
-    const vin = card.querySelector('.rk-val');
-    vin.oninput = () => { const v = P.parseValor(vin.value); if (v) valor = v; drawPix(!!v) };
-    vin.onblur = () => { vin.value = valor.toFixed(2).replace('.', ','); drawPix(true) };
     card.querySelector('[data-copy]').onclick = copy;
     drawPix(true);
     startWait();
@@ -149,7 +146,7 @@ function drawPix(ok) {
   const qr = card.querySelector('.rk-qr'), cc = card.querySelector('.rk-cc'), paid = card.querySelector('[data-go=name]');
   pixOk = ok; paintWait();
   if (!ok) { qr.innerHTML = ''; cc.value = 'O valor mínimo é R$ 1,00.'; return }
-  const s = P.brCode({ key: C.pixKey, name: C.pixName, city: C.pixCity, amount: valor, txid: code });
+  const s = P.brCode({ key: C.pixKey, name: C.pixName, city: C.pixCity, txid: code });
   const q = qrcode(0, 'M'); q.addData(s); q.make();
   qr.innerHTML = q.createSvgTag({ cellSize: 4, margin: 12, scalable: true });
   cc.value = s;
@@ -192,7 +189,7 @@ async function save() {
   if (!name) { msg.textContent = 'Digite seu nome.'; nin.focus(); return }
   try { localStorage.setItem('rk_nome', name) } catch (e) {}
   btn.disabled = true; btn.textContent = 'Salvando…'; msg.textContent = '';
-  const fields = { name: { stringValue: name }, score: { integerValue: String(myScore) }, valor: { doubleValue: valor }, codigo: { stringValue: code }, at: { timestampValue: new Date().toISOString() } };
+  const fields = { name: { stringValue: name }, score: { integerValue: String(myScore) }, codigo: { stringValue: code }, at: { timestampValue: new Date().toISOString() } };
   try {
     const r = await fetch(BASE + cfg.col + '?key=' + C.apiKey, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fields }) });
     if (!r.ok) throw new Error(r.status);
