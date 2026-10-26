@@ -49,6 +49,8 @@ const CSS = `
 
 let cfg = null, list = [], state = ON ? 'load' : 'off', step = 'list', myScore = 0, code = '', valor = 1;
 let bar, run, dlg, card;
+const WAIT = 60; // segundos com o "Já fiz o Pix" travado, contados ao abrir o Pix e de novo ao copiar o código
+let pixOk = true, waitUntil = 0, waitTimer = 0;
 
 function build() {
   const st = document.createElement('style'); st.textContent = CSS; document.head.appendChild(st);
@@ -132,6 +134,7 @@ function renderDlg() {
     vin.onblur = () => { vin.value = valor.toFixed(2).replace('.', ','); drawPix(true) };
     card.querySelector('[data-copy]').onclick = copy;
     drawPix(true);
+    startWait();
   }
   if (step === 'name') {
     const nin = card.querySelector('.rk-name');
@@ -144,7 +147,7 @@ function renderDlg() {
 
 function drawPix(ok) {
   const qr = card.querySelector('.rk-qr'), cc = card.querySelector('.rk-cc'), paid = card.querySelector('[data-go=name]');
-  paid.disabled = !ok;
+  pixOk = ok; paintWait();
   if (!ok) { qr.innerHTML = ''; cc.value = 'O valor mínimo é R$ 1,00.'; return }
   const s = P.brCode({ key: C.pixKey, name: C.pixName, city: C.pixCity, amount: valor, txid: code });
   const q = qrcode(0, 'M'); q.addData(s); q.make();
@@ -152,8 +155,22 @@ function drawPix(ok) {
   cc.value = s;
 }
 
+function startWait() {
+  waitUntil = Date.now() + WAIT * 1000;
+  clearInterval(waitTimer); waitTimer = setInterval(paintWait, 250); paintWait();
+}
+function paintWait() {
+  const paid = card.querySelector('[data-go=name]');
+  if (!paid) { clearInterval(waitTimer); return }
+  const left = Math.ceil((waitUntil - Date.now()) / 1000);
+  paid.disabled = !pixOk || left > 0;
+  paid.textContent = left > 0 ? 'Já fiz o Pix (aguarde 0:' + String(left).padStart(2, '0') + ')' : 'Já fiz o Pix';
+  if (left <= 0) clearInterval(waitTimer);
+}
+
 function copy() {
   const cc = card.querySelector('.rk-cc'), b = card.querySelector('[data-copy]');
+  startWait();
   const done = () => { b.textContent = 'Copiado ✓'; setTimeout(() => { b.textContent = 'Copiar código Pix' }, 1800) };
   if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(cc.value).then(done, fallback);
   else fallback();
